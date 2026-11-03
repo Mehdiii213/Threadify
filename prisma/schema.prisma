@@ -1,0 +1,11 @@
+// Schéma Prisma de Threadify
+// Les modèles (utilisateurs, sessions, créations…) arrivent à partir de l'étape 1.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

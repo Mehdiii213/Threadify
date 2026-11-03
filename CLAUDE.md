@@ -112,6 +112,28 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [ ] Étape 5 — Export (PNG / PDF / texte)
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
+## Reprise — prochaine étape (point au 2026-11-03)
+
+Dernière session arrêtée après validation de l'étape 0. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
+
+### Plan proposé — Étape 1 : authentification Better Auth
+
+1. Installer `better-auth`.
+2. `src/lib/auth.ts` : Better Auth avec l'adaptateur Prisma (PostgreSQL), méthode **e-mail + mot de passe** ; ajouter `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` dans `.env` / `.env.example`.
+3. Générer les modèles Better Auth (`User`, `Session`, `Account`, `Verification`) dans `schema.prisma`, puis **première migration** `init-auth`.
+4. Route `src/app/api/auth/[...all]/route.ts` + client navigateur `src/lib/auth-client.ts`.
+5. Pages en français : `/inscription` (nom, e-mail, mot de passe), `/connexion`, `/espace` (protégée : « Bonjour {prénom} » + « Se déconnecter », redirection vers `/connexion` si non connecté). Messages d'erreur en français.
+6. Accueil : bouton « Commencer gratuitement » → `/inscription` ; en-tête « Connexion » ou « Mon espace » selon la session (dans un `<Suspense>`, cf. Cache Components).
+7. Vérification par captures Playwright : inscription → `/espace` → déconnexion → `/espace` redirige vers `/connexion` → reconnexion.
+8. Mettre à jour ce CLAUDE.md, committer, pousser.
+
+Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisateur) et vérification d'e-mail (service d'envoi à choisir, avant la mise en ligne).
+
+### Au démarrage d'une nouvelle session cloud
+
+- Le conteneur est neuf : `service postgresql start`, puis si besoin `su postgres -c "psql -c \"ALTER USER postgres PASSWORD 'postgres';\" -c 'CREATE DATABASE threadify;'"`.
+- Recréer `.env` depuis `.env.example` (non versionné), puis `npm install`.
+
 ## Journal des décisions
 
 > Format : `AAAA-MM-JJ — Décision — Raison`

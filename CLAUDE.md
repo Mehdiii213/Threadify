@@ -50,19 +50,61 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 - Secrets uniquement dans `.env` (jamais commités) ; maintenir un `.env.example` à jour.
 - Textes de l'interface en français.
 
+## Versions installées
+
+- Next.js **16.4.5** (App Router, Turbopack, `cacheComponents` activé), React 19.3
+- Tailwind CSS **4** (configuration dans `src/app/globals.css`, pas de `tailwind.config`)
+- Prisma **7.10.1** (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) + driver `pg`
+- PostgreSQL **16**, Node.js 22
+
+> Next.js 16 a des API différentes des versions précédentes : consulter `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
+
+## Structure du projet
+
+```
+prisma/schema.prisma        # schéma (générateur `prisma-client`, sortie dans src/generated/prisma)
+prisma.config.ts            # config Prisma 7 : chemin du schéma, migrations, DATABASE_URL
+src/app/                    # routes App Router (layout.tsx, page.tsx, globals.css)
+src/components/             # composants partagés (ex. db-status.tsx)
+src/lib/prisma.ts           # instance unique de PrismaClient (à importer partout)
+src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
+```
+
 ## Commandes utiles
 
-> À compléter une fois le projet initialisé.
+```bash
+npm run dev                          # serveur de dev sur http://localhost:3000
+npm run lint                         # ESLint
+npx tsc --noEmit                     # vérification des types
+npx prisma generate                  # régénérer le client après une modif du schéma
+npx prisma migrate dev --name <nom>  # créer / appliquer une migration
+npx prisma studio                    # explorer la base
+```
+
+## Lancer le projet sur son ordinateur
+
+Prérequis : Node.js 20+ et PostgreSQL (local, ou base en ligne type Neon / Supabase).
 
 ```bash
-npm run dev            # serveur de dev sur http://localhost:3000
-npx prisma migrate dev # appliquer / créer une migration
-npx prisma studio      # explorer la base
+git clone https://github.com/Mehdiii213/Threadify.git && cd Threadify
+createdb threadify                  # ou créer la base via votre outil habituel
+cp .env.example .env                # puis renseigner DATABASE_URL
+npm install                         # installe et génère le client Prisma (postinstall)
+npx prisma migrate dev              # applique les migrations (à partir de l'étape 1)
+npm run dev
 ```
+
+Puis ouvrir http://localhost:3000. Après chaque étape validée : `git pull`, `npm install`, `npx prisma migrate dev`.
+
+## Environnement de développement de Claude (session cloud)
+
+Claude travaille dans un conteneur cloud temporaire : `localhost:3000` n'y est **pas accessible** depuis le navigateur de l'utilisateur. La vérification visible de chaque étape se fait donc par **capture d'écran Playwright** envoyée à l'utilisateur, qui peut aussi lancer le projet chez lui (section ci-dessus).
+
+Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `postgres` / mot de passe `postgres`. Tout ce qui n'est pas poussé sur GitHub est perdu à la fin de la session : committer et pousser à chaque étape.
 
 ## État d'avancement
 
-- [ ] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL)
+- [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
 - [ ] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion)
 - [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format
 - [ ] Étape 3 — Génération IA du contenu (slides / tweets)
@@ -76,12 +118,26 @@ npx prisma studio      # explorer la base
 
 - 2026-11-03 — Stack imposée : Next.js, Prisma + PostgreSQL, Better Auth, Tailwind — exigence du projet.
 - 2026-11-03 — Interface et contenus générés en français par défaut — cible francophone.
+- 2026-11-03 — Dépôt GitHub : https://github.com/Mehdiii213/Threadify (branche `main`) — sauvegarde et suivi des étapes.
+- 2026-11-03 — Next.js 16 avec `src/`, alias `@/*`, Turbopack et `cacheComponents` conservé (réglage par défaut) — suivre les conventions actuelles du framework.
+- 2026-11-03 — Prisma 7.10.1 (stable) plutôt que le tag npm `latest` (8.0.0-rc) — éviter une pré-version.
+- 2026-11-03 — Prisma 7 avec l'adaptateur `@prisma/adapter-pg` et le générateur `prisma-client` (sortie `src/generated/prisma`, non versionnée, régénérée via `postinstall`) — configuration recommandée en v7.
+- 2026-11-03 — Une seule instance de PrismaClient (`src/lib/prisma.ts`, stockée sur `globalThis` en dev) — éviter d'épuiser les connexions avec le rechargement à chaud.
+- 2026-11-03 — Pas de migration à l'étape 0 : schéma vide, première migration avec les tables Better Auth à l'étape 1.
+- 2026-11-03 — Vérification des étapes par capture d'écran Playwright — le serveur du conteneur cloud n'est pas joignable depuis le navigateur de l'utilisateur.
 
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
 
-_Aucun pour l'instant._
+- `npm install prisma@latest` installe une pré-version 8.0.0-rc — le tag `latest` de Prisma pointe vers une RC — installer explicitement `prisma@7.10.1` et `@prisma/client@7.10.1` (mêmes versions pour CLI, client et adaptateur).
+- `prisma init` crée `prisma7.config.ts` et ignore l'option `--url` — comportement de la CLI 7.10 — renommer en `prisma.config.ts` et écrire `DATABASE_URL` à la main dans `.env`.
+- `prisma init` ajoute des dossiers de skills d'agents (`.agents/`, `.claude/`, `.windsurf/`, `skills-lock.json`) — installation automatique de `prisma/skills` — supprimés, non demandés.
+- Prisma 7 ne charge plus `.env` automatiquement — nouveau fonctionnement — `import "dotenv/config"` dans `prisma.config.ts` ; Next.js charge `.env` lui-même pour l'app.
+- Erreur de rendu si on lit la base hors `<Suspense>` — `cacheComponents` exige que les données de requête soient isolées — placer le composant dans `<Suspense>` et appeler `await connection()` (de `next/server`) avant la requête.
+- `Cannot find name 'LayoutProps'` avec `tsc` — types de routes générés par Next — lancer `npx next typegen` (ou `npm run dev`) avant `tsc --noEmit`.
+- `.env.example` ignoré par git — le `.gitignore` de Next contient `.env*` — ajout de l'exception `!.env.example`.
+- `localhost:3000` inaccessible pour l'utilisateur — le serveur tourne dans le conteneur cloud — captures Playwright, ou lancer le projet en local.
 
 ## Questions ouvertes
 

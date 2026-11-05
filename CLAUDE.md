@@ -128,7 +128,17 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## Reprise — prochaine étape (point au 2026-11-05)
 
 - Étapes 0 et 1 validées. Étape 1 validée par l'utilisateur sans problème signalé (le piège « engine » de npm 11.20 ne s'est pas manifesté, ou a été résolu avec le guide).
-- **Plan de l'étape 2 proposé le 2026-11-05, en attente de validation** (voir la conversation : page `/creer` protégée, saisie idée/article, choix du format, modèle Prisma `Creation`, page récapitulative, liste dans `/espace`). Si la session reprend sans contexte : représenter ce plan et attendre l'accord.
+- **Plan de l'étape 2 proposé le 2026-11-05, PAS encore validé** : le représenter et attendre l'accord avant de coder.
+
+### Plan proposé — Étape 2 : écran de saisie et choix du format
+
+1. Modèle Prisma `Creation` (id, userId → User avec suppression en cascade, `sourceType` enum IDEE/ARTICLE, `sourceText`, `format` enum CARROUSEL_INSTAGRAM/CARROUSEL_LINKEDIN/THREAD_X, `status` enum BROUILLON (GENERE plus tard), createdAt/updatedAt) + migration `creations`.
+2. Page protégée `/creer` : deux onglets « Une idée » (zone courte, 10 à 500 caractères) / « Un article » (zone longue, 200 à 20 000 caractères, compteur), trois cartes cliquables pour le format (avec dimensions : 1080×1350 Instagram, 1080×1350 PDF LinkedIn, thread X), bouton « Continuer ».
+3. Server Action `createCreation` : vérifie la session, valide les champs côté serveur (messages en français), enregistre en base, redirige vers `/creations/[id]`.
+4. Page `/creations/[id]` (protégée, uniquement pour son propriétaire, sinon page 404) : récapitulatif (format, extrait du texte) + bouton « Générer » désactivé « Disponible à l'étape suivante ».
+5. `/espace` : bouton « + Nouvelle création » et liste simple des créations (format, début du texte, date) ; accueil : « Commencer gratuitement » mène à `/creer` si connecté.
+6. Import d'article par **URL** : reporté (question ouverte) — collage du texte uniquement.
+7. Vérification par captures Playwright (saisie, erreur de validation, récapitulatif, liste dans l'espace, accès refusé à la création d'un autre compte) ; guide utilisateur `docs/` ultra détaillé (nouveau ZIP, `npm install`, `npx prisma migrate deploy`, test) ; mise à jour de ce fichier après validation.
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier `C:\Users\mehdi\Threadify-main` (hors OneDrive) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 

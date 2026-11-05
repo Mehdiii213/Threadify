@@ -59,6 +59,8 @@ Windows :
 ```bash
 copy .env.example .env
 ```
+> ⚠️ Ne lancer la commande `copy` **qu'une seule fois** : la relancer (en répondant « oui ») écrase le fichier déjà rempli.
+
 ```bash
 notepad .env
 ```
@@ -83,6 +85,14 @@ Enregistrer et fermer. Ce fichier contient un mot de passe : ne jamais le partag
 npm install
 ```
 1 à 3 minutes. Les messages `warn` / `vulnerabilities` sont sans gravité ; seules des lignes `ERR!` en rouge indiquent un problème.
+
+- **Ne pas lancer** `npm audit fix --force` (casse les versions) ni mettre npm à jour.
+- Avertissement `install-scripts … not yet covered by allowScripts` (npm récent) : sans gravité pour lancer le site. Par sécurité, lancer ensuite :
+  ```bash
+  npx prisma generate
+  ```
+  et vérifier la ligne `Generated Prisma Client`.
+- Projet dans **OneDrive** : l'installation peut prendre près de 10 minutes. En cas d'erreur `EPERM` ou `EBUSY`, déplacer le dossier hors de OneDrive et relancer `npm install`.
 
 ## 8. Lancer le site
 
@@ -116,4 +126,14 @@ Taper `localhost:3000` dans le navigateur. En haut à droite :
 
 ## Récupérer une nouvelle version
 
-Retélécharger le ZIP (étape 2), recopier son fichier `.env` dans le nouveau dossier, puis `npm install`. À partir de l'étape 1 (comptes), une commande supplémentaire créera les tables dans Supabase : elle sera ajoutée ici.
+1. Arrêter le site (`Ctrl + C`).
+2. Retélécharger le ZIP (étape 2) et recopier son fichier `.env` dans le nouveau dossier.
+3. Dans le terminal ouvert dans le nouveau dossier :
+   ```bash
+   npm install
+   ```
+4. À partir de l'étape 1 (comptes), créer / mettre à jour les tables dans Supabase :
+   ```bash
+   npx prisma migrate deploy
+   ```
+5. Relancer `npm run dev`.

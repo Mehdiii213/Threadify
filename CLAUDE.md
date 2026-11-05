@@ -90,11 +90,11 @@ git clone https://github.com/Mehdiii213/Threadify.git && cd Threadify
 createdb threadify                  # ou créer la base via votre outil habituel
 cp .env.example .env                # puis renseigner DATABASE_URL
 npm install                         # installe et génère le client Prisma (postinstall)
-npx prisma migrate dev              # applique les migrations (à partir de l'étape 1)
+npx prisma migrate deploy           # applique les migrations (à partir de l'étape 1)
 npm run dev
 ```
 
-Puis ouvrir http://localhost:3000. Après chaque étape validée : `git pull`, `npm install`, `npx prisma migrate dev`.
+Puis ouvrir http://localhost:3000. Après chaque étape validée : `git pull`, `npm install`, `npx prisma migrate deploy`.
 
 Guide détaillé pour débutant (Windows/Mac, base Supabase, dépannage) : **`docs/lancer-en-local.md`** — à tenir à jour à chaque étape qui change l'installation (ex. migrations à l'étape 1).
 
@@ -116,9 +116,9 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-05)
 
-Dernière session arrêtée après validation de l'étape 0.
+Étape 0 validée. **Le projet tourne sur l'ordinateur de l'utilisateur** (2026-11-05) : `localhost:3000` affiche la page d'accueil avec la pastille verte, base **Supabase** connectée.
 
-**Côté utilisateur** : l'utilisateur a un compte **Supabase** et va lancer le projet sur son ordinateur en suivant `docs/lancer-en-local.md` (guide détaillé pour débutant, Windows et Mac, base Supabase via l'adresse « Session pooler »). Au début de la prochaine session : lui demander s'il a réussi (pastille verte sur `localhost:3000`) ou à quelle étape du guide le blocage se produit, et aider si besoin. Profil débutant : expliquer avec des mots simples, étape par étape. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
+**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet dans `C:\Users\mehdi\OneDrive\Bureau\Threadify-main` (téléchargé en ZIP, pas de Git), base Supabase via l'adresse « Session pooler ». Profil débutant : expliquer avec des mots simples, étape par étape, commandes Windows (`copy`, `notepad`, `type`), et demander des captures d'écran. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
 
 ### Plan proposé — Étape 1 : authentification Better Auth
 
@@ -137,6 +137,7 @@ Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisate
 
 - Le conteneur est neuf : `service postgresql start`, puis si besoin `su postgres -c "psql -c \"ALTER USER postgres PASSWORD 'postgres';\" -c 'CREATE DATABASE threadify;'"`.
 - Recréer `.env` depuis `.env.example` (non versionné), puis `npm install`.
+- Après chaque étape qui modifie le schéma : mettre à jour `docs/lancer-en-local.md` (section « Récupérer une nouvelle version ») avec les commandes à lancer chez l'utilisateur.
 
 ## Journal des décisions
 
@@ -151,6 +152,7 @@ Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisate
 - 2026-11-03 — Une seule instance de PrismaClient (`src/lib/prisma.ts`, stockée sur `globalThis` en dev) — éviter d'épuiser les connexions avec le rechargement à chaud.
 - 2026-11-03 — Pas de migration à l'étape 0 : schéma vide, première migration avec les tables Better Auth à l'étape 1.
 - 2026-11-03 — Vérification des étapes par capture d'écran Playwright — le serveur du conteneur cloud n'est pas joignable depuis le navigateur de l'utilisateur.
+- 2026-11-05 — Côté utilisateur, appliquer les migrations avec `npx prisma migrate deploy` (et non `migrate dev`) — les migrations sont créées par Claude ; `deploy` n'a pas besoin de base « shadow », souvent problématique avec Supabase.
 - 2026-11-05 — Base de l'utilisateur en local : **Supabase** (uniquement la base PostgreSQL, pas Supabase Auth), via l'adresse **Session pooler** (port 5432, compatible IPv4) — compte Supabase déjà existant ; la « Direct connection » exige l'IPv6.
 
 ## Pièges rencontrés
@@ -165,6 +167,9 @@ Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisate
 - `Cannot find name 'LayoutProps'` avec `tsc` — types de routes générés par Next — lancer `npx next typegen` (ou `npm run dev`) avant `tsc --noEmit`.
 - `.env.example` ignoré par git — le `.gitignore` de Next contient `.env*` — ajout de l'exception `!.env.example`.
 - `localhost:3000` inaccessible pour l'utilisateur — le serveur tourne dans le conteneur cloud — captures Playwright, ou lancer le projet en local. Selon l'application Claude, un aperçu peut aussi s'afficher : lancer `npm run dev` et signaler le port 3000 avec l'outil d'aperçu.
+- `npm install` très lent (9 min) chez l'utilisateur — dossier du projet dans OneDrive, qui synchronise `node_modules` — fonctionne quand même ; en cas d'erreur `EPERM`/`EBUSY`, déplacer le projet hors de OneDrive (ex. `C:\Users\mehdi\`).
+- Avertissement npm 11.20+ `install-scripts … not yet covered by allowScripts` pour `prisma` et `@prisma/engines` — npm bloque désormais les scripts d'installation des dépendances — le site fonctionne (le `postinstall` du projet lui-même s'exécute) ; si `prisma migrate` réclame un moteur manquant à l'étape 1 : `npm install-scripts approve prisma @prisma/engines` puis `npm install`. **À vérifier lors de l'étape 1.**
+- `copy .env.example .env` relancé plusieurs fois écrase le `.env` déjà rempli — Windows demande « Remplacer ? » — ne copier qu'une fois, puis modifier avec `notepad .env`.
 - Mot de passe Supabase avec caractères spéciaux (`@ # / ? %`) — ils cassent l'URL de connexion — utiliser uniquement lettres et chiffres (ou les encoder en URL).
 
 ## Questions ouvertes

@@ -56,6 +56,7 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 - Next.js **16.4.5** (App Router, Turbopack, `cacheComponents` activé), React 19.3
 - Tailwind CSS **4** (configuration dans `src/app/globals.css`, pas de `tailwind.config`)
 - Prisma **7.10.1** (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) + driver `pg`
+- Better Auth **1.7.18**
 - PostgreSQL **16**, Node.js 22
 
 > Next.js 16 a des API différentes des versions précédentes : consulter `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
@@ -66,8 +67,17 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 prisma/schema.prisma        # schéma (générateur `prisma-client`, sortie dans src/generated/prisma)
 prisma.config.ts            # config Prisma 7 : chemin du schéma, migrations, DATABASE_URL
 src/app/                    # routes App Router (layout.tsx, page.tsx, globals.css)
-src/components/             # composants partagés (ex. db-status.tsx)
+src/app/inscription|connexion/  # pages publiques d'authentification (formulaire client AuthForm)
+src/app/espace/             # espace personnel protégé
+src/app/api/auth/[...all]/  # route Better Auth (toNextJsHandler)
+src/proxy.ts                # redirections rapides selon la présence du cookie de session
+src/components/             # composants partagés (site-header, auth-form, db-status…)
 src/lib/prisma.ts           # instance unique de PrismaClient (à importer partout)
+src/lib/auth.ts             # configuration serveur Better Auth
+src/lib/auth-client.ts      # client Better Auth pour les composants "use client"
+src/lib/session.ts          # getSession() / requireSession() côté serveur
+src/lib/auth-errors.ts      # traduction FR des codes d'erreur Better Auth
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -108,7 +118,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## État d'avancement
 
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
-- [ ] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — **codée et testée par Claude (commit `09aed71`), en attente de validation par l'utilisateur**
+- [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
 - [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format
 - [ ] Étape 3 — Génération IA du contenu (slides / tweets)
 - [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
@@ -117,19 +127,10 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-05)
 
-- Étape 0 validée ; le projet a tourné chez l'utilisateur avec Supabase (pastille verte).
-- **Étape 1 codée, testée par Claude (captures Playwright envoyées), poussée (`09aed71`)**. L'utilisateur doit la tester chez lui en suivant **`docs/mettre-a-jour.md`** (guide ultra détaillé : nouveau ZIP décompressé dans `C:\Users\mehdi\Threadify-main` hors OneDrive, copie de l'ancien `.env`, ajout de `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`, `npm install`, `npx prisma migrate deploy`, `npm run dev`, test du parcours).
-- **À la reprise** : demander où en est le test (captures à l'appui), aider en cas de blocage — point à surveiller : erreur « engine » au `migrate deploy` (npm 11.20 bloque les scripts d'installation de Prisma, solution dans le guide). Une fois l'étape 1 **validée par l'utilisateur** : mettre à jour ce fichier (étape cochée, décisions, pièges ci-dessous), puis proposer le plan de l'étape 2.
+- Étapes 0 et 1 validées. Étape 1 validée par l'utilisateur sans problème signalé (le piège « engine » de npm 11.20 ne s'est pas manifesté, ou a été résolu avec le guide).
+- **Plan de l'étape 2 proposé le 2026-11-05, en attente de validation** (voir la conversation : page `/creer` protégée, saisie idée/article, choix du format, modèle Prisma `Creation`, page récapitulative, liste dans `/espace`). Si la session reprend sans contexte : représenter ce plan et attendre l'accord.
 
-**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git) ; ancien dossier `C:\Users\mehdi\OneDrive\Bureau\Threadify-main`, nouveau dossier conseillé `C:\Users\mehdi\Threadify-main` ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
-
-### Décisions et pièges de l'étape 1 (à reporter dans le journal une fois validée)
-
-- Better Auth **1.7.18** (dernière stable), e-mail + mot de passe (8 à 128 caractères), connexion automatique après inscription, plugin `nextCookies()` en dernier.
-- Modèles Prisma `User`, `Session`, `Account`, `Verification` écrits à la main d'après `getAuthTables()` de `better-auth/db` (le paquet `@better-auth/cli` est resté en 1.4, en retard sur `better-auth` 1.7) ; tables en minuscules via `@@map`. Migration `20261105192537_init_auth`.
-- Protection des pages : `src/proxy.ts` (le `middleware` s'appelle désormais `proxy` en Next.js 16) redirige selon la seule **présence** du cookie ; la vraie vérification se fait côté serveur avec `requireSession()` (`src/lib/session.ts`), dans un `<Suspense>` (Cache Components).
-- Formulaires côté client avec `authClient` (`better-auth/react`) ; messages d'erreur traduits par code dans `src/lib/auth-errors.ts`.
-- Piège de test Playwright : `getByRole('alert')` attrape aussi l'annonceur de route de Next.js (qui contient le titre de la page) → cibler `form [role=alert]`.
+**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier `C:\Users\mehdi\Threadify-main` (hors OneDrive) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
 ### Au démarrage d'une nouvelle session cloud
 
@@ -151,6 +152,12 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-03 — Pas de migration à l'étape 0 : schéma vide, première migration avec les tables Better Auth à l'étape 1.
 - 2026-11-03 — Vérification des étapes par capture d'écran Playwright — le serveur du conteneur cloud n'est pas joignable depuis le navigateur de l'utilisateur.
 - 2026-11-05 — Côté utilisateur, appliquer les migrations avec `npx prisma migrate deploy` (et non `migrate dev`) — les migrations sont créées par Claude ; `deploy` n'a pas besoin de base « shadow », souvent problématique avec Supabase.
+- 2026-11-05 — Better Auth **1.7.18** (dernière stable), e-mail + mot de passe (8 à 128 caractères), connexion automatique après inscription, plugin `nextCookies()` en dernier — parcours le plus simple pour le MVP ; Google et vérification d'e-mail reportés.
+- 2026-11-05 — Modèles `User`, `Session`, `Account`, `Verification` écrits à la main d'après `getAuthTables()` de `better-auth/db`, tables en minuscules via `@@map` (migration `20261105192537_init_auth`) — le paquet `@better-auth/cli` est resté en 1.4, en retard sur `better-auth` 1.7.
+- 2026-11-05 — Pages protégées : `src/proxy.ts` redirige selon la seule présence du cookie (rapide), la vraie vérification se fait côté serveur avec `requireSession()` dans un `<Suspense>` — un cookie peut être expiré ou falsifié ; Cache Components impose le `<Suspense>`.
+- 2026-11-05 — Formulaires d'auth côté client avec `authClient` (`better-auth/react`), erreurs traduites par code (`src/lib/auth-errors.ts`) — Better Auth renvoie des messages en anglais.
+- 2026-11-05 — Projet de l'utilisateur déplacé hors de OneDrive (`C:\Users\mehdi\Threadify-main`) — installation 9 min dans OneDrive.
+- 2026-11-05 — Guides utilisateur ultra détaillés dans `docs/` (description de la fenêtre cmd, écrans attendus) — l'utilisateur débute complètement.
 - 2026-11-05 — Base de l'utilisateur en local : **Supabase** (uniquement la base PostgreSQL, pas Supabase Auth), via l'adresse **Session pooler** (port 5432, compatible IPv4) — compte Supabase déjà existant ; la « Direct connection » exige l'IPv6.
 
 ## Pièges rencontrés
@@ -166,8 +173,12 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - `.env.example` ignoré par git — le `.gitignore` de Next contient `.env*` — ajout de l'exception `!.env.example`.
 - `localhost:3000` inaccessible pour l'utilisateur — le serveur tourne dans le conteneur cloud — captures Playwright, ou lancer le projet en local. Selon l'application Claude, un aperçu peut aussi s'afficher : lancer `npm run dev` et signaler le port 3000 avec l'outil d'aperçu.
 - `npm install` très lent (9 min) chez l'utilisateur — dossier du projet dans OneDrive, qui synchronise `node_modules` — fonctionne quand même ; en cas d'erreur `EPERM`/`EBUSY`, déplacer le projet hors de OneDrive (ex. `C:\Users\mehdi\`).
-- Avertissement npm 11.20+ `install-scripts … not yet covered by allowScripts` pour `prisma` et `@prisma/engines` — npm bloque désormais les scripts d'installation des dépendances — le site fonctionne (le `postinstall` du projet lui-même s'exécute) ; si `prisma migrate` réclame un moteur manquant à l'étape 1 : `npm install-scripts approve prisma @prisma/engines` puis `npm install`. **À vérifier lors de l'étape 1.**
+- Avertissement npm 11.20+ `install-scripts … not yet covered by allowScripts` pour `prisma` et `@prisma/engines` — npm bloque désormais les scripts d'installation des dépendances — le site fonctionne (le `postinstall` du projet lui-même s'exécute) ; si `prisma migrate` réclame un moteur manquant à l'étape 1 : `npm install-scripts approve prisma @prisma/engines` puis `npm install`. Rien de signalé lors de l'étape 1 chez l'utilisateur.
 - `copy .env.example .env` relancé plusieurs fois écrase le `.env` déjà rempli — Windows demande « Remplacer ? » — ne copier qu'une fois, puis modifier avec `notepad .env`.
+- Next.js 16 : le fichier `middleware.ts` est déprécié — renommé `proxy` — créer `src/proxy.ts` exportant `proxy()` et un `matcher`.
+- `@better-auth/cli generate` en retard de version (1.4 vs 1.7) — publication séparée du CLI — générer le schéma Prisma à la main à partir de `getAuthTables()`.
+- Test Playwright : `getByRole('alert')` capture l'annonceur de route de Next.js (qui contient le titre de la page) — cibler `form [role=alert]`.
+- Première capture prise pendant la compilation (« Un instant… » / « Compiling ») — premier rendu lent en dev — attendre un élément précis avant la capture.
 - Mot de passe Supabase avec caractères spéciaux (`@ # / ? %`) — ils cassent l'URL de connexion — utiliser uniquement lettres et chiffres (ou les encoder en URL).
 
 ## Questions ouvertes

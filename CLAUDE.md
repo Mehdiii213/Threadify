@@ -141,6 +141,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - `/creations/[id]` : requête filtrée par `userId` → `notFound()` pour la création d'un autre compte ; page `src/app/not-found.tsx` en français. Comme `notFound()` est appelé dans un `<Suspense>` (Cache Components), le statut HTTP reste 200 mais le contenu n'est pas exposé.
 - « Commencer gratuitement » → `/creer` ; le proxy envoie un visiteur sans session de `/creer` vers `/inscription` ; après inscription → `/creer`, après connexion → `/espace`.
 - **Piège** : après connexion/inscription, `router.push()` rejouait une redirection mémorisée par le routeur client (`/creer` → `/inscription` vue avant la connexion) et `router.refresh()` rechargeait `/inscription` que le proxy renvoie vers `/espace` — **solution** : navigation complète `window.location.assign()` après connexion, inscription et déconnexion (exception ESLint commentée dans `sign-out-button.tsx`).
+- **Piège chez l'utilisateur** : ZIP décompressé dans un nouveau dossier (`C:\2222\Threadify-main`) sans `.env` → `npm install` échouait au `postinstall` (`PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL`) — solution : copier le `.env` de l'ancien dossier ; et `prisma.config.ts` utilise désormais `process.env.DATABASE_URL` au lieu de `env()` pour que `prisma generate` marche sans `.env`.
 - Piège de test : `waitForURL` peut expirer pendant la première compilation d'une page en dev — utiliser `waitUntil: 'commit'` et un délai plus long ; texte « Trop court » = 10 caractères, donc valide.
 
 ### Plan proposé — Étape 2 : écran de saisie et choix du format
@@ -153,7 +154,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 6. Import d'article par **URL** : reporté (question ouverte) — collage du texte uniquement.
 7. Vérification par captures Playwright (saisie, erreur de validation, récapitulatif, liste dans l'espace, accès refusé à la création d'un autre compte) ; guide utilisateur `docs/` ultra détaillé (nouveau ZIP, `npm install`, `npx prisma migrate deploy`, test) ; mise à jour de ce fichier après validation.
 
-**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier `C:\Users\mehdi\Threadify-main` (hors OneDrive) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
+**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier `C:\Users\mehdi\Threadify-main` (hors OneDrive) — **à l'étape 2, ZIP décompressé dans `C:\2222\Threadify-main`** : demander quel dossier est utilisé ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
 ### Au démarrage d'une nouvelle session cloud
 

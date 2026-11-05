@@ -40,6 +40,11 @@ Cette fois, on décompresse **au même endroit** que la dernière fois (`C:\User
 5. Windows affiche une fenêtre **« Remplacer ou ignorer les fichiers »** (car le dossier existe déjà). Cliquez sur **« Remplacer les fichiers dans la destination »** (la ligne avec une coche ✔).
 6. Une barre de progression défile quelques secondes, puis une fenêtre s'ouvre.
 
+> ⚠️ Si vous avez décompressé dans **un autre dossier** (par exemple `C:\2222\Threadify-main`), ce nouveau dossier **n'a pas de fichier `.env`** : `npm install` ou `npx prisma migrate deploy` afficheront une erreur avec `DATABASE_URL`. Copiez alors votre `.env` depuis l'ancien dossier (voir « Copier le .env » dans `docs/mettre-a-jour.md`, étape E), par exemple dans la fenêtre noire ouverte dans le nouveau dossier :
+> ```bash
+> copy "C:\Users\mehdi\Threadify-main\.env" .env
+> ```
+
 ✅ Vérification : ouvrez `C:\Users\mehdi\Threadify-main`. Vous devez y voir, entre autres, le dossier **`docs`** contenant un fichier **`tester-etape-2.md`** (ce guide), et toujours votre fichier **`.env`**.
 
 ---

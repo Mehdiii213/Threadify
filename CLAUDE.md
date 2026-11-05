@@ -36,7 +36,8 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 1. **Toujours répondre en français**, y compris dans les explications, les plans et les résumés.
 2. **Proposer un plan avant tout changement important** (nouvelle fonctionnalité, modification du schéma Prisma, changement d'architecture, ajout de dépendance, refonte d'un écran) et attendre la validation avant de coder.
 3. **Chaque étape se termine par une vérification visible dans le navigateur** : indiquer l'URL à ouvrir (ex. `http://localhost:3000/...`) et ce que l'on doit y voir. Une étape n'est pas terminée tant que ce n'est pas vérifiable à l'écran.
-4. **Après chaque étape validée, mettre à jour ce CLAUDE.md** :
+4. **Expliquer chaque étape à l'utilisateur comme à un débutant complet** (ne connaît rien au code) : guide pas à pas, clic par clic, en **décrivant la fenêtre noire (cmd)** — son titre, l'invite `C:\Users\mehdi\Threadify-main>`, ce qui s'affiche, comment savoir qu'une commande est terminée — ainsi que chaque écran du navigateur attendu (✅). Sauvegarder ce guide dans `docs/` (modèle : `docs/mettre-a-jour.md`).
+5. **Après chaque étape validée, mettre à jour ce CLAUDE.md** :
    - ajouter les décisions prises dans « Journal des décisions » ;
    - ajouter les problèmes rencontrés et leur solution dans « Pièges rencontrés » ;
    - mettre à jour « État d'avancement ».
@@ -107,7 +108,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## État d'avancement
 
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
-- [ ] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion)
+- [ ] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — **codée et testée par Claude (commit `09aed71`), en attente de validation par l'utilisateur**
 - [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format
 - [ ] Étape 3 — Génération IA du contenu (slides / tweets)
 - [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
@@ -116,22 +117,19 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-05)
 
-Étape 0 validée. **Le projet tourne sur l'ordinateur de l'utilisateur** (2026-11-05) : `localhost:3000` affiche la page d'accueil avec la pastille verte, base **Supabase** connectée.
+- Étape 0 validée ; le projet a tourné chez l'utilisateur avec Supabase (pastille verte).
+- **Étape 1 codée, testée par Claude (captures Playwright envoyées), poussée (`09aed71`)**. L'utilisateur doit la tester chez lui en suivant **`docs/mettre-a-jour.md`** (guide ultra détaillé : nouveau ZIP décompressé dans `C:\Users\mehdi\Threadify-main` hors OneDrive, copie de l'ancien `.env`, ajout de `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`, `npm install`, `npx prisma migrate deploy`, `npm run dev`, test du parcours).
+- **À la reprise** : demander où en est le test (captures à l'appui), aider en cas de blocage — point à surveiller : erreur « engine » au `migrate deploy` (npm 11.20 bloque les scripts d'installation de Prisma, solution dans le guide). Une fois l'étape 1 **validée par l'utilisateur** : mettre à jour ce fichier (étape cochée, décisions, pièges ci-dessous), puis proposer le plan de l'étape 2.
 
-**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet dans `C:\Users\mehdi\OneDrive\Bureau\Threadify-main` (téléchargé en ZIP, pas de Git), base Supabase via l'adresse « Session pooler ». Profil débutant : expliquer avec des mots simples, étape par étape, commandes Windows (`copy`, `notepad`, `type`), et demander des captures d'écran. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
+**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git) ; ancien dossier `C:\Users\mehdi\OneDrive\Bureau\Threadify-main`, nouveau dossier conseillé `C:\Users\mehdi\Threadify-main` ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
-### Plan proposé — Étape 1 : authentification Better Auth
+### Décisions et pièges de l'étape 1 (à reporter dans le journal une fois validée)
 
-1. Installer `better-auth`.
-2. `src/lib/auth.ts` : Better Auth avec l'adaptateur Prisma (PostgreSQL), méthode **e-mail + mot de passe** ; ajouter `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` dans `.env` / `.env.example`.
-3. Générer les modèles Better Auth (`User`, `Session`, `Account`, `Verification`) dans `schema.prisma`, puis **première migration** `init-auth`.
-4. Route `src/app/api/auth/[...all]/route.ts` + client navigateur `src/lib/auth-client.ts`.
-5. Pages en français : `/inscription` (nom, e-mail, mot de passe), `/connexion`, `/espace` (protégée : « Bonjour {prénom} » + « Se déconnecter », redirection vers `/connexion` si non connecté). Messages d'erreur en français.
-6. Accueil : bouton « Commencer gratuitement » → `/inscription` ; en-tête « Connexion » ou « Mon espace » selon la session (dans un `<Suspense>`, cf. Cache Components).
-7. Vérification par captures Playwright : inscription → `/espace` → déconnexion → `/espace` redirige vers `/connexion` → reconnexion.
-8. Mettre à jour ce CLAUDE.md, committer, pousser.
-
-Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisateur) et vérification d'e-mail (service d'envoi à choisir, avant la mise en ligne).
+- Better Auth **1.7.18** (dernière stable), e-mail + mot de passe (8 à 128 caractères), connexion automatique après inscription, plugin `nextCookies()` en dernier.
+- Modèles Prisma `User`, `Session`, `Account`, `Verification` écrits à la main d'après `getAuthTables()` de `better-auth/db` (le paquet `@better-auth/cli` est resté en 1.4, en retard sur `better-auth` 1.7) ; tables en minuscules via `@@map`. Migration `20261105192537_init_auth`.
+- Protection des pages : `src/proxy.ts` (le `middleware` s'appelle désormais `proxy` en Next.js 16) redirige selon la seule **présence** du cookie ; la vraie vérification se fait côté serveur avec `requireSession()` (`src/lib/session.ts`), dans un `<Suspense>` (Cache Components).
+- Formulaires côté client avec `authClient` (`better-auth/react`) ; messages d'erreur traduits par code dans `src/lib/auth-errors.ts`.
+- Piège de test Playwright : `getByRole('alert')` attrape aussi l'annonceur de route de Next.js (qui contient le titre de la page) → cibler `form [role=alert]`.
 
 ### Au démarrage d'une nouvelle session cloud
 

@@ -44,7 +44,7 @@ export default function Home() {
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/inscription"
+            href="/creer"
             className="rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700"
           >
             Commencer gratuitement

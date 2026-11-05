@@ -1,5 +1,6 @@
 // Schéma Prisma de Threadify
-// Étape 1 : modèles d'authentification (Better Auth). Les créations arriveront ensuite.
+// Étape 1 : modèles d'authentification (Better Auth).
+// Étape 2 : créations (idée ou article + format choisi).
 
 generator client {
   provider = "prisma-client"
@@ -15,15 +16,16 @@ datasource db {
 // champs : l'adaptateur Prisma de Better Auth s'appuie sur ces noms.
 
 model User {
-  id            String    @id
+  id            String     @id
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String     @unique
+  emailVerified Boolean    @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  creations     Creation[]
 
   @@map("user")
 }
@@ -73,4 +75,36 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ─── Créations ────────────────────────────────────────────────────────────────
+
+enum SourceType {
+  IDEE
+  ARTICLE
+}
+
+enum CreationFormat {
+  CARROUSEL_INSTAGRAM
+  CARROUSEL_LINKEDIN
+  THREAD_X
+}
+
+enum CreationStatus {
+  BROUILLON // saisi, pas encore généré par l'IA
+}
+
+model Creation {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType SourceType
+  sourceText String
+  format     CreationFormat
+  status     CreationStatus @default(BROUILLON)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([userId, createdAt])
+  @@map("creation")
 }

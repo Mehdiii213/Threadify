@@ -8,8 +8,14 @@ export function proxy(request: NextRequest) {
   const hasSession = Boolean(getSessionCookie(request));
   const { pathname } = request.nextUrl;
 
-  if (!hasSession && pathname.startsWith("/espace")) {
-    return NextResponse.redirect(new URL("/connexion", request.url));
+  if (!hasSession) {
+    // « Commencer gratuitement » mène à /creer : un visiteur sans compte va s'inscrire.
+    if (pathname === "/creer") {
+      return NextResponse.redirect(new URL("/inscription", request.url));
+    }
+    if (pathname.startsWith("/espace") || pathname.startsWith("/creations")) {
+      return NextResponse.redirect(new URL("/connexion", request.url));
+    }
   }
   if (hasSession && (pathname === "/connexion" || pathname === "/inscription")) {
     return NextResponse.redirect(new URL("/espace", request.url));
@@ -18,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/espace/:path*", "/connexion", "/inscription"],
+  matcher: ["/espace/:path*", "/creer", "/creations/:path*", "/connexion", "/inscription"],
 };

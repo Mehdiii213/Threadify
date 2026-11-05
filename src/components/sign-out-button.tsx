@@ -1,18 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
 
   async function handleClick() {
     setPending(true);
     await authClient.signOut();
-    router.push("/connexion");
-    router.refresh();
+    // Navigation complète : vide le cache du routeur client (pages vues connecté).
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- voulu : vider le cache du routeur après un changement de session
+    window.location.assign("/connexion");
   }
 
   return (

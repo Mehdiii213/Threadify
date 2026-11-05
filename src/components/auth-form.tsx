@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-errors";
@@ -12,7 +11,6 @@ const inputClass =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200";
 
 export function AuthForm({ mode }: { mode: Mode }) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const isSignUp = mode === "inscription";
@@ -38,8 +36,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
       setError(authErrorMessage(error));
       return;
     }
-    router.push("/espace");
-    router.refresh();
+    // Nouveau compte : direction la première création ; reconnexion : l'espace.
+    // Navigation complète (et non router.push) : le routeur client garde en
+    // mémoire les redirections vues avant la connexion (ex. /creer -> /inscription)
+    // et les rejouerait. Recharger la page repart d'un état propre.
+    window.location.assign(isSignUp ? "/creer" : "/espace");
   }
 
   return (

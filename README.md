@@ -48,6 +48,8 @@ Prérequis : **Node.js 20+** et **PostgreSQL** (local, ou une base en ligne grat
 
 Ouvrez ensuite http://localhost:3000 : la page d'accueil doit afficher la pastille verte « Base de données : connectée ».
 
+> Débutant ou base Supabase ? Suivez le guide détaillé : [`docs/lancer-en-local.md`](./docs/lancer-en-local.md).
+
 ## Mettre à jour
 
 ```bash

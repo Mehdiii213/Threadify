@@ -96,6 +96,8 @@ npm run dev
 
 Puis ouvrir http://localhost:3000. Après chaque étape validée : `git pull`, `npm install`, `npx prisma migrate dev`.
 
+Guide détaillé pour débutant (Windows/Mac, base Supabase, dépannage) : **`docs/lancer-en-local.md`** — à tenir à jour à chaque étape qui change l'installation (ex. migrations à l'étape 1).
+
 ## Environnement de développement de Claude (session cloud)
 
 Claude travaille dans un conteneur cloud temporaire : `localhost:3000` n'y est **pas accessible** depuis le navigateur de l'utilisateur. La vérification visible de chaque étape se fait donc par **capture d'écran Playwright** envoyée à l'utilisateur, qui peut aussi lancer le projet chez lui (section ci-dessus).
@@ -112,9 +114,11 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [ ] Étape 5 — Export (PNG / PDF / texte)
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
-## Reprise — prochaine étape (point au 2026-11-03)
+## Reprise — prochaine étape (point au 2026-11-05)
 
-Dernière session arrêtée après validation de l'étape 0. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
+Dernière session arrêtée après validation de l'étape 0.
+
+**Côté utilisateur** : il a un compte **Supabase** et va lancer le projet sur son ordinateur en suivant `docs/lancer-en-local.md` (guide détaillé pour débutant, Windows et Mac, base Supabase via l'adresse « Session pooler »). Au début de la prochaine session : lui demander s'il a réussi (pastille verte sur `localhost:3000`) ou à quelle étape du guide il bloque, et l'aider si besoin. Il débute : expliquer avec des mots simples, étape par étape. **Le plan de l'étape 1 ci-dessous a été proposé mais PAS encore validé** : le représenter à l'utilisateur et attendre son accord avant de coder.
 
 ### Plan proposé — Étape 1 : authentification Better Auth
 
@@ -147,6 +151,7 @@ Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisate
 - 2026-11-03 — Une seule instance de PrismaClient (`src/lib/prisma.ts`, stockée sur `globalThis` en dev) — éviter d'épuiser les connexions avec le rechargement à chaud.
 - 2026-11-03 — Pas de migration à l'étape 0 : schéma vide, première migration avec les tables Better Auth à l'étape 1.
 - 2026-11-03 — Vérification des étapes par capture d'écran Playwright — le serveur du conteneur cloud n'est pas joignable depuis le navigateur de l'utilisateur.
+- 2026-11-05 — Base de l'utilisateur en local : **Supabase** (uniquement la base PostgreSQL, pas Supabase Auth), via l'adresse **Session pooler** (port 5432, compatible IPv4) — l'utilisateur a déjà un compte ; la « Direct connection » exige l'IPv6.
 
 ## Pièges rencontrés
 
@@ -159,7 +164,8 @@ Reporté : connexion Google (identifiants Google Cloud à créer par l'utilisate
 - Erreur de rendu si on lit la base hors `<Suspense>` — `cacheComponents` exige que les données de requête soient isolées — placer le composant dans `<Suspense>` et appeler `await connection()` (de `next/server`) avant la requête.
 - `Cannot find name 'LayoutProps'` avec `tsc` — types de routes générés par Next — lancer `npx next typegen` (ou `npm run dev`) avant `tsc --noEmit`.
 - `.env.example` ignoré par git — le `.gitignore` de Next contient `.env*` — ajout de l'exception `!.env.example`.
-- `localhost:3000` inaccessible pour l'utilisateur — le serveur tourne dans le conteneur cloud — captures Playwright, ou lancer le projet en local.
+- `localhost:3000` inaccessible pour l'utilisateur — le serveur tourne dans le conteneur cloud — captures Playwright, ou lancer le projet en local. Selon l'application Claude, un aperçu peut aussi s'afficher : lancer `npm run dev` et signaler le port 3000 avec l'outil d'aperçu.
+- Mot de passe Supabase avec caractères spéciaux (`@ # / ? %`) — ils cassent l'URL de connexion — utiliser uniquement lettres et chiffres (ou les encoder en URL).
 
 ## Questions ouvertes
 

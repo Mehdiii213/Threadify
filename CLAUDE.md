@@ -77,7 +77,11 @@ src/lib/auth.ts             # configuration serveur Better Auth
 src/lib/auth-client.ts      # client Better Auth pour les composants "use client"
 src/lib/session.ts          # getSession() / requireSession() côté serveur
 src/lib/auth-errors.ts      # traduction FR des codes d'erreur Better Auth
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour)
+src/app/creer/              # page de saisie + Server Action createCreation (actions.ts)
+src/app/creations/[id]/     # récapitulatif d'une création (propriétaire uniquement)
+src/app/not-found.tsx       # page 404 en français
+src/lib/creations.ts        # limites, libellés des formats, extraits, dates FR
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -119,7 +123,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
-- [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format
+- [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — **codée et testée par Claude (commit `a603d7c`), en attente de validation par l'utilisateur**
 - [ ] Étape 3 — Génération IA du contenu (slides / tweets)
 - [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
 - [ ] Étape 5 — Export (PNG / PDF / texte)
@@ -128,7 +132,16 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## Reprise — prochaine étape (point au 2026-11-05)
 
 - Étapes 0 et 1 validées. Étape 1 validée par l'utilisateur sans problème signalé (le piège « engine » de npm 11.20 ne s'est pas manifesté, ou a été résolu avec le guide).
-- **Plan de l'étape 2 proposé le 2026-11-05, PAS encore validé** : le représenter et attendre l'accord avant de coder.
+- **Étape 2 : plan validé, codée, testée par Claude (captures envoyées), poussée (`a603d7c`)**. L'utilisateur doit la tester avec **`docs/tester-etape-2.md`** (nouveau ZIP décompressé **par-dessus** `C:\Users\mehdi\Threadify-main` — le `.env` est conservé —, `npm install`, `npx prisma migrate deploy`, `npm run dev`, parcours de test). À la reprise : demander le résultat ; une fois validée, reporter les décisions/pièges ci-dessous dans le journal, cocher l'étape, puis proposer le plan de l'étape 3 (génération IA : choisir le fournisseur d'IA — question ouverte).
+
+### Décisions et pièges de l'étape 2 (à reporter dans le journal une fois validée)
+
+- Modèle `Creation` (`@@map("creation")`, id `cuid()`, index `[userId, createdAt]`) + enums `SourceType` (IDEE/ARTICLE), `CreationFormat` (CARROUSEL_INSTAGRAM/CARROUSEL_LINKEDIN/THREAD_X), `CreationStatus` (BROUILLON) ; migration `20261105201520_creations`.
+- Limites : idée 10–500 caractères, article 200–20 000 ; règles et libellés partagés dans `src/lib/creations.ts` ; validation **côté serveur** dans la Server Action `src/app/creer/actions.ts` (`useActionState` côté client, valeurs saisies renvoyées pour ne rien perdre).
+- `/creations/[id]` : requête filtrée par `userId` → `notFound()` pour la création d'un autre compte ; page `src/app/not-found.tsx` en français. Comme `notFound()` est appelé dans un `<Suspense>` (Cache Components), le statut HTTP reste 200 mais le contenu n'est pas exposé.
+- « Commencer gratuitement » → `/creer` ; le proxy envoie un visiteur sans session de `/creer` vers `/inscription` ; après inscription → `/creer`, après connexion → `/espace`.
+- **Piège** : après connexion/inscription, `router.push()` rejouait une redirection mémorisée par le routeur client (`/creer` → `/inscription` vue avant la connexion) et `router.refresh()` rechargeait `/inscription` que le proxy renvoie vers `/espace` — **solution** : navigation complète `window.location.assign()` après connexion, inscription et déconnexion (exception ESLint commentée dans `sign-out-button.tsx`).
+- Piège de test : `waitForURL` peut expirer pendant la première compilation d'une page en dev — utiliser `waitUntil: 'commit'` et un délai plus long ; texte « Trop court » = 10 caractères, donc valide.
 
 ### Plan proposé — Étape 2 : écran de saisie et choix du format
 

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { DbStatus, StatusPill } from "@/components/db-status";
+import { SiteHeader } from "@/components/site-header";
 
 const formats = [
   {
@@ -19,14 +21,11 @@ const formats = [
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col bg-zinc-50 text-zinc-900">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-xl font-bold tracking-tight">
-          Thread<span className="text-violet-600">ify</span>
-        </span>
+      <SiteHeader>
         <Suspense fallback={<StatusPill color="bg-zinc-300" label="Base de données : vérification…" />}>
           <DbStatus />
         </Suspense>
-      </header>
+      </SiteHeader>
 
       <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 py-16 text-center">
         <p className="mb-4 rounded-full bg-violet-100 px-4 py-1 text-sm font-medium text-violet-700">
@@ -44,9 +43,12 @@ export default function Home() {
           plusieurs heures.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <span className="rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-violet-600/20">
-            Bientôt disponible
-          </span>
+          <Link
+            href="/inscription"
+            className="rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700"
+          >
+            Commencer gratuitement
+          </Link>
         </div>
 
         <div className="mt-20 grid w-full gap-6 text-left sm:grid-cols-3">

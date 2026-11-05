@@ -77,7 +77,18 @@ Remplacer **seulement ce qui est entre guillemets** sur la ligne `DATABASE_URL`,
 ```
 DATABASE_URL="postgresql://postgres.abcdefghijkl:MotDePasse123@aws-0-eu-west-3.pooler.supabase.com:5432/postgres"
 ```
-Enregistrer et fermer. Ce fichier contient un mot de passe : ne jamais le partager (il est ignoré par Git).
+Le fichier contient aussi (à partir de l'étape 1) deux lignes pour les comptes utilisateurs :
+```
+BETTER_AUTH_SECRET="remplacez-moi-par-une-cle-secrete-aleatoire"
+BETTER_AUTH_URL="http://localhost:3000"
+```
+Remplacer la valeur de `BETTER_AUTH_SECRET` par une clé secrète aléatoire. Pour en fabriquer une, taper dans le terminal :
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+et copier la suite de caractères affichée entre les guillemets. Laisser `BETTER_AUTH_URL` tel quel.
+
+Enregistrer et fermer. Ce fichier contient des secrets : ne jamais le partager (il est ignoré par Git).
 
 ## 7. Installer les composants (une fois, puis après chaque mise à jour)
 
@@ -94,6 +105,19 @@ npm install
   et vérifier la ligne `Generated Prisma Client`.
 - Projet dans **OneDrive** : l'installation peut prendre près de 10 minutes. En cas d'erreur `EPERM` ou `EBUSY`, déplacer le dossier hors de OneDrive et relancer `npm install`.
 
+## 7 bis. Créer les tables dans Supabase (à partir de l'étape 1)
+
+```bash
+npx prisma migrate deploy
+```
+Résultat attendu : `All migrations have been successfully applied.` (ou `No pending migrations to apply.` si c'est déjà fait). Les tables `user`, `session`, `account` et `verification` apparaissent alors dans Supabase (menu **Table Editor**).
+
+Si une erreur parle d'un moteur (« engine ») manquant : lancer
+```bash
+npm install-scripts approve prisma @prisma/engines
+```
+puis `npm install`, puis recommencer `npx prisma migrate deploy`.
+
 ## 8. Lancer le site
 
 ```bash
@@ -106,6 +130,15 @@ Attendre `Local: http://localhost:3000` et `Ready`. Sur Windows, autoriser Node.
 Taper `localhost:3000` dans le navigateur. En haut à droite :
 - pastille verte « Base de données : connectée » → tout fonctionne ;
 - pastille rouge « injoignable » → voir le dépannage.
+
+### Tester les comptes (étape 1)
+
+1. Sur la page d'accueil, cliquer sur **Commencer gratuitement**.
+2. Remplir nom, e-mail et mot de passe (8 caractères minimum) → **Créer mon compte**.
+3. On arrive sur **Mon espace** : « Bonjour {prénom} ».
+4. **Se déconnecter** → retour à la page de connexion.
+5. Taper `localhost:3000/espace` : on est renvoyé vers la connexion (page protégée).
+6. Se reconnecter avec le même e-mail et mot de passe.
 
 ## Arrêter / relancer
 
@@ -128,6 +161,7 @@ Taper `localhost:3000` dans le navigateur. En haut à droite :
 
 1. Arrêter le site (`Ctrl + C`).
 2. Retélécharger le ZIP (étape 2) et recopier son fichier `.env` dans le nouveau dossier.
+   Si une nouvelle version ajoute des lignes dans `.env.example`, les ajouter aussi dans son `.env` (voir étape 6).
 3. Dans le terminal ouvert dans le nouveau dossier :
    ```bash
    npm install

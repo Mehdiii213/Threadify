@@ -36,7 +36,7 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 1. **Toujours répondre en français**, y compris dans les explications, les plans et les résumés.
 2. **Proposer un plan avant tout changement important** (nouvelle fonctionnalité, modification du schéma Prisma, changement d'architecture, ajout de dépendance, refonte d'un écran) et attendre la validation avant de coder.
 3. **Chaque étape se termine par une vérification visible dans le navigateur** : indiquer l'URL à ouvrir (ex. `http://localhost:3000/...`) et ce que l'on doit y voir. Une étape n'est pas terminée tant que ce n'est pas vérifiable à l'écran.
-4. **Expliquer chaque étape à l'utilisateur comme à un débutant complet** (ne connaît rien au code) : guide pas à pas, clic par clic, en **décrivant la fenêtre noire (cmd)** — son titre, l'invite `C:\Users\mehdi\Threadify-main>`, ce qui s'affiche, comment savoir qu'une commande est terminée — ainsi que chaque écran du navigateur attendu (✅). Sauvegarder ce guide dans `docs/` (modèle : `docs/mettre-a-jour.md`).
+4. **Expliquer chaque étape à l'utilisateur comme à un débutant complet** (ne connaît rien au code) : guide pas à pas, clic par clic, en **décrivant la fenêtre noire (cmd)** — son titre, l'invite `C:\2222\Threadify-main>`, ce qui s'affiche, comment savoir qu'une commande est terminée — ainsi que chaque écran du navigateur attendu (✅). Sauvegarder ce guide dans `docs/` (modèle : `docs/mettre-a-jour.md`).
 5. **Après chaque étape validée, mettre à jour ce CLAUDE.md** :
    - ajouter les décisions prises dans « Journal des décisions » ;
    - ajouter les problèmes rencontrés et leur solution dans « Pièges rencontrés » ;
@@ -129,9 +129,10 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [ ] Étape 5 — Export (PNG / PDF / texte)
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
-## Reprise — prochaine étape (point au 2026-11-05)
+## Reprise — prochaine étape (point au 2026-11-05, soir)
 
 - Étapes 0 et 1 validées. Étape 1 validée par l'utilisateur sans problème signalé (le piège « engine » de npm 11.20 ne s'est pas manifesté, ou a été résolu avec le guide).
+- **Où en est l'utilisateur (fin de soirée du 2026-11-05)** : nouvelle version installée dans **`C:\2222\Threadify-main`** (l'ancien dossier a été supprimé par erreur → `.env` **recréé** depuis `.env.example` avec l'adresse Supabase « Session pooler » et une **nouvelle** `BETTER_AUTH_SECRET`), `npm install` OK, `npx prisma migrate deploy` OK, `npm run dev` OK : accueil affiché avec pastille verte. **Il reste à faire le parcours de test de l'étape 2** (étape H de `docs/tester-etape-2.md` : se reconnecter — la nouvelle clé l'a déconnecté —, créer une idée et un article, voir la liste). À la reprise : rappeler comment relancer le site (Explorateur → `C:\2222\Threadify-main` → barre d'adresse `cmd` → `npm run dev` → `localhost:3000`), puis guider l'étape H et attendre « validé ».
 - **Étape 2 : plan validé, codée, testée par Claude (captures envoyées), poussée (`a603d7c`)**. L'utilisateur doit la tester avec **`docs/tester-etape-2.md`** (nouveau ZIP décompressé **par-dessus** `C:\Users\mehdi\Threadify-main` — le `.env` est conservé —, `npm install`, `npx prisma migrate deploy`, `npm run dev`, parcours de test). À la reprise : demander le résultat ; une fois validée, reporter les décisions/pièges ci-dessous dans le journal, cocher l'étape, puis proposer le plan de l'étape 3 (génération IA : choisir le fournisseur d'IA — question ouverte).
 
 ### Décisions et pièges de l'étape 2 (à reporter dans le journal une fois validée)
@@ -142,6 +143,8 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - « Commencer gratuitement » → `/creer` ; le proxy envoie un visiteur sans session de `/creer` vers `/inscription` ; après inscription → `/creer`, après connexion → `/espace`.
 - **Piège** : après connexion/inscription, `router.push()` rejouait une redirection mémorisée par le routeur client (`/creer` → `/inscription` vue avant la connexion) et `router.refresh()` rechargeait `/inscription` que le proxy renvoie vers `/espace` — **solution** : navigation complète `window.location.assign()` après connexion, inscription et déconnexion (exception ESLint commentée dans `sign-out-button.tsx`).
 - **Piège chez l'utilisateur** : ZIP décompressé dans un nouveau dossier (`C:\2222\Threadify-main`) sans `.env` → `npm install` échouait au `postinstall` (`PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL`) — solution : copier le `.env` de l'ancien dossier ; et `prisma.config.ts` utilise désormais `process.env.DATABASE_URL` au lieu de `env()` pour que `prisma generate` marche sans `.env`.
+- **Piège chez l'utilisateur** : `P1013: The provided database string is invalid. The scheme is not recognized` au `migrate deploy` — ligne `DATABASE_URL` mal formée dans le `.env` recréé (texte avant `postgresql://`, ligne en double…) — réécrire la ligne proprement ; commande de diagnostic qui masque le mot de passe : `node -e "require('dotenv').config();const u=process.env.DATABASE_URL||'';console.log(JSON.stringify(u.replace(/:[^:@\/]*@/,':****@')))"`.
+- Ancien dossier supprimé par erreur → `.env` perdu — il n'est jamais dans le ZIP — le recréer : `copy .env.example .env`, adresse Supabase (bouton Connect → Session pooler), nouvelle clé via `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` ; les comptes restent dans Supabase, seule la session est perdue.
 - Piège de test : `waitForURL` peut expirer pendant la première compilation d'une page en dev — utiliser `waitUntil: 'commit'` et un délai plus long ; texte « Trop court » = 10 caractères, donc valide.
 
 ### Plan proposé — Étape 2 : écran de saisie et choix du format
@@ -154,7 +157,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 6. Import d'article par **URL** : reporté (question ouverte) — collage du texte uniquement.
 7. Vérification par captures Playwright (saisie, erreur de validation, récapitulatif, liste dans l'espace, accès refusé à la création d'un autre compte) ; guide utilisateur `docs/` ultra détaillé (nouveau ZIP, `npm install`, `npx prisma migrate deploy`, test) ; mise à jour de ce fichier après validation.
 
-**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier `C:\Users\mehdi\Threadify-main` (hors OneDrive) — **à l'étape 2, ZIP décompressé dans `C:\2222\Threadify-main`** : demander quel dossier est utilisé ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
+**Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
 ### Au démarrage d'une nouvelle session cloud
 

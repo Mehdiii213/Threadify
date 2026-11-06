@@ -133,37 +133,17 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
-- [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — **codée et testée par Claude (commit `bb98dd8`), en attente de validation par l'utilisateur**
+- [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [ ] Étape 5 — Export (PNG / PDF / texte) — prévu : ZIP de PNG 1080×1350 numérotés pour Instagram, PDF pour LinkedIn, texte pour X
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
+- [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
+- [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-06, soir)
+## Reprise — prochaine étape (point au 2026-11-06, fin de journée)
 
-- Étapes 0 à 3 validées. Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération réelle testée avec succès (carrousel + tutoiement).
-- **Étape 4 : plan validé, codée, testée par Claude (captures avec un contenu d'exemple écrit à la main), poussée (`bb98dd8`).** L'utilisateur doit la tester avec `docs/tester-etape-4.md` (ZIP par-dessus `C:\2222`, `npm install`, `npx prisma migrate deploy`, `npm run dev`). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal, puis proposer le plan de l'étape 5 (export : choisir la méthode de rendu PNG/PDF).
-
-### Décisions et pièges de l'étape 4 (à reporter dans le journal une fois validée)
-
-- `src/components/slide.tsx` : slide 1080×1350 en **styles en ligne** (pixels), `SlideThumbnail` la réduit avec `transform: scale` — même composant prévu pour l'export (étape 5). Couverture (grand titre, « Glisse → »), slides du milieu numérotées 01, 02…, dernière slide avec texte mis en valeur.
-- `src/lib/design.ts` (partagé client/serveur) : 3 modèles (`minimal`, `audacieux`, `degrade` — dégradé via `color-mix`), 6 palettes, 4 polices (`src/lib/fonts.ts`, `next/font/google` : Inter, Montserrat, Poppins, Playfair Display), signature (nom, @pseudo, initiales) ; `DesignSchema` zod ; design par défaut : Minimal + Violet + Inter + nom du compte.
-- Couleur du texte sur fond d'accent choisie par **contraste WCAG** (blanc ou #111111, le plus contrasté) — un simple seuil de luminance donnait du blanc illisible sur le bleu clair de la palette Nuit.
-- `src/lib/content.ts` : schémas et limites du contenu partagés client/serveur (`generation.ts` reste `server-only` et réexporte). Limites : 15 slides, titre 120, texte 500 ; 25 tweets ≤ 280.
-- Éditeurs client `carousel-editor.tsx` et `thread-editor.tsx` : aperçu en direct, ↑ ↓, ajout (avant la dernière slide), suppression, bouton Enregistrer (Server Actions `saveCarousel` / `saveThread` validées par zod, propriétaire vérifié), avertissement `beforeunload` si non enregistré. `key={generatedAt}` pour repartir des nouveaux textes après une génération.
-- « Régénérer » demande confirmation (`window.confirm`) car il remplace les textes modifiés ; le design est conservé. Migration `20261106195716_design` (`Creation.design Json?`).
-- 2026-11-06 : retour de l'utilisateur après test chez lui (« j'apprécie ») → la pastille de la signature affiche **une seule initiale** (première lettre du nom, sinon du @pseudo ; accents gérés), police agrandie de 32 à 40 px. Fonction `initial()` dans `design.ts` (remplace `initials()`).
-- Interface au vouvoiement, contenus des slides au tutoiement (« Glisse → », « Ton texte ici. »).
-- Piège de test : `getByLabel('Tweet 2')` attrape aussi les boutons « Monter le tweet 2 » — utiliser `getByRole('textbox', { name: 'Tweet 2', exact: true })`.
-
-### Plan proposé — Étape 4 : éditeur de carrousel (design)
-
-1. Composant unique `Slide` rendu en HTML/CSS au format exact **1080 × 1350** (mis à l'échelle à l'écran avec `transform: scale`) — il sera réutilisé tel quel pour l'export PNG/PDF de l'étape 5.
-2. **3 modèles** : « Minimal » (fond clair, texte sombre), « Audacieux » (fond de couleur pleine, gros titres), « Dégradé » (fond en dégradé, accent). Slide 1 = couverture (titre en grand), dernière = appel à l'action, slides du milieu numérotées.
-3. **Couleurs** : palettes prêtes à l'emploi + 3 sélecteurs (fond, texte, accent) via `<input type="color">`.
-4. **Polices** : 4 polices Google chargées avec `next/font` (ex. Inter, Montserrat, Poppins, Playfair Display) ; aucune nouvelle dépendance.
-5. **Signature** sur chaque slide : nom affiché + @pseudo + pastille d'initiales (pré-remplis avec le nom du compte). Logo/photo reportés (stockage de fichiers nécessaire).
-6. **Édition des textes** : titre et texte de chaque slide modifiables, slides supprimables et déplaçables (↑ ↓) ; pour un thread X, tweets modifiables avec compteur 280.
-7. Aperçu en direct ; bouton « Enregistrer » (Server Action, session + propriétaire vérifiés) ; nouveau champ `Creation.design Json?` (migration). « Régénérer » demande confirmation car il remplace les textes modifiés.
-8. Vérification par captures (3 modèles, couleurs, polices, modification enregistrée puis rechargée) ; guide `docs/tester-etape-4.md` ultra détaillé ; mise à jour de ce fichier après validation.
+- **Étapes 0 à 4 validées** (étape 4 validée le 2026-11-06 : « c'est nickel »). Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération et éditeur de design testés avec succès.
+- **Prochaine séance (samedi ou dimanche) : étape 5 — export.** Le plan n'est **pas encore proposé** : le préparer et le présenter (simplement), puis attendre l'accord avant de coder. Prévu : ZIP de PNG 1080×1350 numérotés (`slide-01.png`…) pour Instagram, un PDF pour LinkedIn, texte copiable pour X (déjà là). À décider dans le plan : la méthode de rendu (côté navigateur, ex. bibliothèque de capture HTML → image, ou côté serveur avec un navigateur sans interface) — réutiliser `src/components/slide.tsx` pour que l'export soit identique à l'aperçu ; nouvelle dépendance à faire valider. Inclure dans le guide comment publier sur Instagram (téléphone : « + » → Publication → sélection multiple dans l'ordre ; ou instagram.com → Créer).
+- Ensuite : étape 6 (tableau de bord), puis **étape 7 (abonnement Stripe)** et **étape 8 (mise en ligne)** — ajoutées le 2026-11-06 à la demande de l'utilisateur (question posée « sans accélérer »).
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
@@ -213,6 +193,16 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-06 — Environnement cloud dédié **« Threadify »** (personnel) créé le 2026-11-06, avec un script de préparation (démarre PostgreSQL, crée la base, `.env` de test avec clé factice, `npm install`, `prisma migrate deploy`) — **script pas encore éprouvé** sur une session neuve.
 - 2026-11-06 — Étapes 4 (design) et 5 (export) gardées séparées (choix de l'utilisateur) ; publication directe sur Instagram (API Meta : compte pro + validation de l'app) reportée après le MVP.
 
+- 2026-11-06 — `src/components/slide.tsx` : slide 1080×1350 en **styles en ligne** (pixels), `SlideThumbnail` la réduit avec `transform: scale` — même composant prévu pour l'export (étape 5). Couverture (grand titre, « Glisse → »), slides du milieu numérotées 01, 02…, dernière slide avec texte mis en valeur.
+- 2026-11-06 — `src/lib/design.ts` (partagé client/serveur) : 3 modèles (`minimal`, `audacieux`, `degrade` — dégradé via `color-mix`), 6 palettes, 4 polices (`src/lib/fonts.ts`, `next/font/google` : Inter, Montserrat, Poppins, Playfair Display), signature (nom, @pseudo, initiales) ; `DesignSchema` zod ; design par défaut : Minimal + Violet + Inter + nom du compte.
+- 2026-11-06 — Couleur du texte sur fond d'accent choisie par **contraste WCAG** (blanc ou #111111, le plus contrasté) — un simple seuil de luminance donnait du blanc illisible sur le bleu clair de la palette Nuit.
+- 2026-11-06 — `src/lib/content.ts` : schémas et limites du contenu partagés client/serveur (`generation.ts` reste `server-only` et réexporte). Limites : 15 slides, titre 120, texte 500 ; 25 tweets ≤ 280.
+- 2026-11-06 — Éditeurs client `carousel-editor.tsx` et `thread-editor.tsx` : aperçu en direct, ↑ ↓, ajout (avant la dernière slide), suppression, bouton Enregistrer (Server Actions `saveCarousel` / `saveThread` validées par zod, propriétaire vérifié), avertissement `beforeunload` si non enregistré. `key={generatedAt}` pour repartir des nouveaux textes après une génération.
+- 2026-11-06 — « Régénérer » demande confirmation (`window.confirm`) car il remplace les textes modifiés ; le design est conservé. Migration `20261106195716_design` (`Creation.design Json?`).
+- 2026-11-06 : retour de l'utilisateur après test chez lui (« j'apprécie ») → la pastille de la signature affiche **une seule initiale** (première lettre du nom, sinon du @pseudo ; accents gérés), police agrandie de 32 à 40 px. Fonction `initial()` dans `design.ts` (remplace `initials()`).
+- 2026-11-06 — Interface au vouvoiement, contenus des slides au tutoiement (« Glisse → », « Ton texte ici. »).
+- 2026-11-06 — Feuille de route complétée : étape 7 abonnement mensuel (après le MVP complet : on fait payer un produit qui permet d'exporter), étape 8 mise en ligne. Côté utilisateur à préparer : statut d'entreprise (SIRET) et compte bancaire pour Stripe, choix des offres et prix, documents légaux.
+
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
@@ -242,8 +232,10 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - **Piège** : impossible d'enregistrer une clé pour `api.anthropic.com` dans l'environnement cloud (« Anthropic's own hosts are authenticated by the session itself »), et la variable `ANTHROPIC_BASE_URL` de la session sert à Claude Code lui-même — ne pas l'utiliser pour l'application. Conséquence : Claude teste l'interface avec un contenu d'exemple et une clé factice (erreur 401 → message « clé invalide »), la vraie génération se teste chez l'utilisateur.
 - Piège de test : plusieurs `form [role=alert]` vides sur la page — cibler celui qui contient du texte (`.filter({ hasText: /\S/ })`).
 
+- Piège de test : `getByLabel('Tweet 2')` attrape aussi les boutons « Monter le tweet 2 » — utiliser `getByRole('textbox', { name: 'Tweet 2', exact: true })`.
+
 ## Questions ouvertes
 
 - Méthode d'export des carrousels (rendu côté serveur ou côté client) — à décider à l'étape 5 ; l'étape 4 prépare un composant `Slide` 1080×1350 réutilisable.
 - Import d'article par URL (scraping) dans le MVP ou plus tard ?
-- Modèle de monétisation (freemium, quotas de générations).
+- Modèle de monétisation : détaillé à l'étape 7 (offres, prix, quotas) — à décider avec l'utilisateur.

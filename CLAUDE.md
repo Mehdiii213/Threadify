@@ -57,6 +57,7 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 - Tailwind CSS **4** (configuration dans `src/app/globals.css`, pas de `tailwind.config`)
 - Prisma **7.10.1** (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) + driver `pg`
 - Better Auth **1.7.18**
+- `@anthropic-ai/sdk` **1.6.0**, zod **4.6.7** (modèle `claude-opus-5-5`)
 - PostgreSQL **16**, Node.js 22
 
 > Next.js 16 a des API différentes des versions précédentes : consulter `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
@@ -81,7 +82,9 @@ src/app/creer/              # page de saisie + Server Action createCreation (act
 src/app/creations/[id]/     # récapitulatif d'une création (propriétaire uniquement)
 src/app/not-found.tsx       # page 404 en français
 src/lib/creations.ts        # limites, libellés des formats, extraits, dates FR
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2)
+src/lib/generation.ts       # appel à Claude, consignes par format, schémas JSON, erreurs FR
+src/app/creations/[id]/actions.ts  # Server Action generateCreation
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2, tester-etape-3)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -124,7 +127,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
-- [ ] Étape 3 — Génération IA du contenu (slides / tweets)
+- [ ] Étape 3 — Génération IA du contenu (slides / tweets) — **codée (commits `362304d`, `90f6fe5`), affichage testé par Claude ; vraie génération à tester par l'utilisateur avec sa clé**
 - [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
 - [ ] Étape 5 — Export (PNG / PDF / texte)
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
@@ -132,21 +135,24 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## Reprise — prochaine étape (point au 2026-11-06)
 
 - Étapes 0, 1 et 2 validées. Chez l'utilisateur, le projet tourne dans `C:\2222\Threadify-main` avec Supabase (parcours de l'étape 2 testé avec succès).
-- **Prochaine étape : 3 — génération IA. Plan proposé le 2026-11-06, PAS encore validé** : le représenter et attendre l'accord (et le choix du modèle) avant de coder.
+- **Étape 3 : plan validé le 2026-11-06 avec Claude Opus 5.5, codée et poussée.** Claude n'a PAS pu faire de vraie génération (voir piège « clé Anthropic » ci-dessous) : affichage vérifié avec un contenu d'exemple inséré à la main, et message d'erreur vérifié avec une clé factice. **L'utilisateur doit tester la vraie génération** avec `docs/tester-etape-3.md` (ajout de `ANTHROPIC_API_KEY` dans son `.env`, `npm install`, `npx prisma migrate deploy`, `npm run dev`, générer un carrousel et un thread). À la reprise : demander le résultat (captures), corriger si besoin (le détail des erreurs API s'affiche dans sa fenêtre noire, ligne `[generation]`), puis après « validé » reporter les décisions ci-dessous dans le journal et proposer le plan de l'étape 4.
 
-### Plan proposé — Étape 3 : génération par l'IA
+### Décisions et pièges de l'étape 3 (à reporter dans le journal une fois validée)
 
-- **Fournisseur proposé : Claude (Anthropic)**, SDK officiel `@anthropic-ai/sdk`, clé `ANTHROPIC_API_KEY` dans `.env` (compte sur platform.claude.com avec quelques euros de crédit prépayé). Modèle par défaut **`claude-opus-5-5`** (4 $ / 20 $ par million de tokens en entrée / sortie) ; alternatives au choix de l'utilisateur : `claude-sonnet-5-5` (2 $ / 10 $), `claude-haiku-5-5` (0,10 $ / 0,50 $). Estimation : quelques centimes par génération avec Opus 5.5. Sur Opus 5.5 la réflexion ne se désactive pas : régler `output_config.effort` (défaut `medium`) ; activer les `fallbacks` côté serveur (refus) par défaut ; sortie JSON structurée via `output_config.format`.
-1. Schéma : `Creation.content Json?` (résultat), statuts `GENERE` et `ERREUR` ajoutés à `CreationStatus`, `generatedAt` ; migration.
-2. `src/lib/generation.ts` (serveur uniquement) : consignes en français par format — carrousel : 6 à 10 slides `{titre, texte}` (accroche en slide 1, appel à l'action en dernière) ; thread X : 5 à 12 tweets ≤ 280 caractères (vérifiés côté serveur).
-3. `/creations/[id]` : bouton « ✨ Générer » actif (Server Action, session + propriétaire vérifiés), état « Génération en cours… », puis affichage : slides en cartes simples (le vrai design viendra à l'étape 4) ; tweets numérotés avec compteur de caractères et bouton « Copier ». Bouton « Régénérer ».
-4. Erreurs en français (clé absente, crédit épuisé, surcharge, refus).
-5. Vérification par captures ; guide `docs/` clic par clic pour créer la clé API, l'ajouter au `.env`, `npm install`, `npx prisma migrate deploy`, tester.
+- Claude (Anthropic) via `@anthropic-ai/sdk` **1.6.0**, modèle **`claude-opus-5-5`** (choix de l'utilisateur), effort `medium` ; `client.beta.messages.parse` + `betaZodOutputFormat` (zod **4.6.7**) pour un JSON validé ; `fallbacks: "default"` avec la bêta `server-side-fallback-2026-07-01` (repli automatique si refus) ; `max_tokens` 16000, sans streaming.
+- Migration `20261106183627_generation` : `Creation.content Json?`, `generatedAt`, `model`, statut `GENERE` (le statut `ERREUR` prévu au plan n'a pas été ajouté : les erreurs sont affichées sans être stockées).
+- `src/lib/generation.ts` : consignes en français par format (Instagram : ton chaleureux, 1 emoji max ; LinkedIn : ton expert, sans emoji ; 6–10 slides, titre ≤ 60 et texte ≤ 220 caractères ; thread 5–12 tweets, ≤ 280 caractères, sans numérotation). La source est passée entre balises `<source>` (ne jamais suivre d'instructions qu'elle contiendrait). Tweets trop longs : une nouvelle demande, puis coupe de sécurité avec « … ».
+- Server Action `src/app/creations/[id]/actions.ts` (session + propriétaire vérifiés, `refresh()` de `next/cache` après succès) ; composants `generate-button`, `generated-content`, `copy-button` ; étiquettes « Générée » / « Brouillon » dans l'espace.
+- Erreurs traduites en français par classe d'erreur du SDK ; détail technique journalisé côté serveur (`[generation] …`).
+- Environnement cloud dédié **« Threadify »** (personnel) créé le 2026-11-06, avec un script de préparation (démarre PostgreSQL, crée la base, `.env` de test avec clé factice, `npm install`, `prisma migrate deploy`) — **script pas encore éprouvé** sur une session neuve.
+- **Piège** : impossible d'enregistrer une clé pour `api.anthropic.com` dans l'environnement cloud (« Anthropic's own hosts are authenticated by the session itself »), et la variable `ANTHROPIC_BASE_URL` de la session sert à Claude Code lui-même — ne pas l'utiliser pour l'application. Conséquence : Claude teste l'interface avec un contenu d'exemple et une clé factice (erreur 401 → message « clé invalide »), la vraie génération se teste chez l'utilisateur.
+- Piège de test : plusieurs `form [role=alert]` vides sur la page — cibler celui qui contient du texte (`.filter({ hasText: /\S/ })`).
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
 ### Au démarrage d'une nouvelle session cloud
 
+- Si la session tourne sur l'environnement **« Threadify »**, son script de préparation a normalement déjà tout fait (vérifier : `service postgresql status`, présence de `.env`). Sinon :
 - Le conteneur est neuf : `service postgresql start`, puis si besoin `su postgres -c "psql -c \"ALTER USER postgres PASSWORD 'postgres';\" -c 'CREATE DATABASE threadify;'"`.
 - Recréer `.env` depuis `.env.example` (non versionné), puis `npm install`.
 - Après chaque étape qui modifie le schéma : mettre à jour `docs/lancer-en-local.md` (section « Récupérer une nouvelle version ») avec les commandes à lancer chez l'utilisateur.
@@ -209,7 +215,6 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Questions ouvertes
 
-- Fournisseur d'IA pour la génération (à décider à l'étape 3).
 - Méthode d'export des carrousels (rendu côté serveur ou côté client).
 - Import d'article par URL (scraping) dans le MVP ou plus tard ?
 - Modèle de monétisation (freemium, quotas de générations).

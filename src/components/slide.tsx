@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Slide as SlideContent } from "@/lib/content";
-import { SLIDE_HEIGHT, SLIDE_WIDTH, initials, readableOn, type Design } from "@/lib/design";
+import { SLIDE_HEIGHT, SLIDE_WIDTH, initial, readableOn, type Design } from "@/lib/design";
 import { SLIDE_FONTS } from "@/lib/fonts";
 
 // Une slide dessinée à la taille réelle d'Instagram (1080 × 1350 px).
@@ -105,12 +105,12 @@ export function Slide({ slide, index, total, design }: Props) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 32,
+                fontSize: 40,
                 fontWeight: 800,
                 flexShrink: 0,
               }}
             >
-              {initials(design.author.name || design.author.handle)}
+              {initial(design.author.name || design.author.handle)}
             </div>
             <div style={{ minWidth: 0 }}>
               {design.author.name && <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.2 }}>{design.author.name}</div>}

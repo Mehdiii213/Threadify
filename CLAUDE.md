@@ -150,6 +150,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - `src/lib/content.ts` : schémas et limites du contenu partagés client/serveur (`generation.ts` reste `server-only` et réexporte). Limites : 15 slides, titre 120, texte 500 ; 25 tweets ≤ 280.
 - Éditeurs client `carousel-editor.tsx` et `thread-editor.tsx` : aperçu en direct, ↑ ↓, ajout (avant la dernière slide), suppression, bouton Enregistrer (Server Actions `saveCarousel` / `saveThread` validées par zod, propriétaire vérifié), avertissement `beforeunload` si non enregistré. `key={generatedAt}` pour repartir des nouveaux textes après une génération.
 - « Régénérer » demande confirmation (`window.confirm`) car il remplace les textes modifiés ; le design est conservé. Migration `20261106195716_design` (`Creation.design Json?`).
+- 2026-11-06 : retour de l'utilisateur après test chez lui (« j'apprécie ») → la pastille de la signature affiche **une seule initiale** (première lettre du nom, sinon du @pseudo ; accents gérés), police agrandie de 32 à 40 px. Fonction `initial()` dans `design.ts` (remplace `initials()`).
 - Interface au vouvoiement, contenus des slides au tutoiement (« Glisse → », « Ton texte ici. »).
 - Piège de test : `getByLabel('Tweet 2')` attrape aussi les boutons « Monter le tweet 2 » — utiliser `getByRole('textbox', { name: 'Tweet 2', exact: true })`.
 

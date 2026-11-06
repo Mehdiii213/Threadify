@@ -61,9 +61,10 @@ export function readDesign(value: unknown, userName: string): Design {
   return parsed.success ? parsed.data : defaultDesign(userName);
 }
 
-export function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? "?").slice(0, 2)).toUpperCase();
+/** Initiale affichée dans la pastille de la signature : la première lettre du nom. */
+export function initial(name: string) {
+  const letter = name.trim().replace(/^@/, "").match(/\p{L}|\p{N}/u)?.[0] ?? "?";
+  return letter.toUpperCase();
 }
 
 /** Luminance relative (0 = noir, 1 = blanc) d'une couleur #RRGGBB. */

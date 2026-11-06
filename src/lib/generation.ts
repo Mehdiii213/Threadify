@@ -91,6 +91,10 @@ export class GenerationError extends Error {}
 
 function frenchError(error: unknown): GenerationError {
   if (error instanceof GenerationError) return error;
+  // Détail technique dans la fenêtre noire (npm run dev), pour le dépannage.
+  if (error instanceof Anthropic.APIError) {
+    console.error(`[generation] Erreur du service d'IA (${error.status ?? "réseau"}) :`, error.message);
+  }
   if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
     return new GenerationError(
       "La clé de l'IA est invalide. Vérifiez la ligne ANTHROPIC_API_KEY de votre fichier .env.",

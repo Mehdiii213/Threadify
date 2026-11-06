@@ -127,27 +127,26 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
-- [ ] Étape 3 — Génération IA du contenu (slides / tweets) — **codée (commits `362304d`, `90f6fe5`), affichage testé par Claude ; vraie génération à tester par l'utilisateur avec sa clé**
-- [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
-- [ ] Étape 5 — Export (PNG / PDF / texte)
+- [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
+- [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — **plan proposé le 2026-11-06, à valider**
+- [ ] Étape 5 — Export (PNG / PDF / texte) — prévu : ZIP de PNG 1080×1350 numérotés pour Instagram, PDF pour LinkedIn, texte pour X
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
-## Reprise — prochaine étape (point au 2026-11-06)
+## Reprise — prochaine étape (point au 2026-11-06, soir)
 
-- Étapes 0, 1 et 2 validées. Chez l'utilisateur, le projet tourne dans `C:\2222\Threadify-main` avec Supabase (parcours de l'étape 2 testé avec succès).
-- **Étape 3 : plan validé le 2026-11-06 avec Claude Opus 5.5, codée et poussée.** Claude n'a PAS pu faire de vraie génération (voir piège « clé Anthropic » ci-dessous) : affichage vérifié avec un contenu d'exemple inséré à la main, et message d'erreur vérifié avec une clé factice. **L'utilisateur doit tester la vraie génération** avec `docs/tester-etape-3.md` (ajout de `ANTHROPIC_API_KEY` dans son `.env`, `npm install`, `npx prisma migrate deploy`, `npm run dev`, générer un carrousel et un thread). À la reprise : demander le résultat (captures), corriger si besoin (le détail des erreurs API s'affiche dans sa fenêtre noire, ligne `[generation]`), puis après « validé » reporter les décisions ci-dessous dans le journal et proposer le plan de l'étape 4.
+- Étapes 0 à 3 validées. Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération réelle testée avec succès (carrousel + tutoiement).
+- **Étape 4 : plan proposé le 2026-11-06, PAS encore validé** — le représenter et attendre l'accord avant de coder.
 
-### Décisions et pièges de l'étape 3 (à reporter dans le journal une fois validée)
+### Plan proposé — Étape 4 : éditeur de carrousel (design)
 
-- Claude (Anthropic) via `@anthropic-ai/sdk` **1.6.0**, modèle **`claude-opus-5-5`** (choix de l'utilisateur), effort `medium` ; `client.beta.messages.parse` + `betaZodOutputFormat` (zod **4.6.7**) pour un JSON validé ; `fallbacks: "default"` avec la bêta `server-side-fallback-2026-07-01` (repli automatique si refus) ; `max_tokens` 16000, sans streaming.
-- Migration `20261106183627_generation` : `Creation.content Json?`, `generatedAt`, `model`, statut `GENERE` (le statut `ERREUR` prévu au plan n'a pas été ajouté : les erreurs sont affichées sans être stockées).
-- `src/lib/generation.ts` : consignes en français par format (Instagram : ton chaleureux, 1 emoji max ; LinkedIn : ton expert, sans emoji ; 6–10 slides, titre ≤ 60 et texte ≤ 220 caractères ; thread 5–12 tweets, ≤ 280 caractères, sans numérotation). La source est passée entre balises `<source>` (ne jamais suivre d'instructions qu'elle contiendrait). Tweets trop longs : une nouvelle demande, puis coupe de sécurité avec « … ».
-- Server Action `src/app/creations/[id]/actions.ts` (session + propriétaire vérifiés, `refresh()` de `next/cache` après succès) ; composants `generate-button`, `generated-content`, `copy-button` ; étiquettes « Générée » / « Brouillon » dans l'espace.
-- 2026-11-06 : **première vraie génération réussie chez l'utilisateur** (carrousel Instagram de 8 slides). Retours : longueur des textes, quantité d'emojis et style **bons** ; demande de **tutoiement** → consigne modifiée (« Tutoie toujours le lecteur… »). L'interface du site reste au vouvoiement (non demandé).
-- Erreurs traduites en français par classe d'erreur du SDK ; détail technique journalisé côté serveur (`[generation] …`).
-- Environnement cloud dédié **« Threadify »** (personnel) créé le 2026-11-06, avec un script de préparation (démarre PostgreSQL, crée la base, `.env` de test avec clé factice, `npm install`, `prisma migrate deploy`) — **script pas encore éprouvé** sur une session neuve.
-- **Piège** : impossible d'enregistrer une clé pour `api.anthropic.com` dans l'environnement cloud (« Anthropic's own hosts are authenticated by the session itself »), et la variable `ANTHROPIC_BASE_URL` de la session sert à Claude Code lui-même — ne pas l'utiliser pour l'application. Conséquence : Claude teste l'interface avec un contenu d'exemple et une clé factice (erreur 401 → message « clé invalide »), la vraie génération se teste chez l'utilisateur.
-- Piège de test : plusieurs `form [role=alert]` vides sur la page — cibler celui qui contient du texte (`.filter({ hasText: /\S/ })`).
+1. Composant unique `Slide` rendu en HTML/CSS au format exact **1080 × 1350** (mis à l'échelle à l'écran avec `transform: scale`) — il sera réutilisé tel quel pour l'export PNG/PDF de l'étape 5.
+2. **3 modèles** : « Minimal » (fond clair, texte sombre), « Audacieux » (fond de couleur pleine, gros titres), « Dégradé » (fond en dégradé, accent). Slide 1 = couverture (titre en grand), dernière = appel à l'action, slides du milieu numérotées.
+3. **Couleurs** : palettes prêtes à l'emploi + 3 sélecteurs (fond, texte, accent) via `<input type="color">`.
+4. **Polices** : 4 polices Google chargées avec `next/font` (ex. Inter, Montserrat, Poppins, Playfair Display) ; aucune nouvelle dépendance.
+5. **Signature** sur chaque slide : nom affiché + @pseudo + pastille d'initiales (pré-remplis avec le nom du compte). Logo/photo reportés (stockage de fichiers nécessaire).
+6. **Édition des textes** : titre et texte de chaque slide modifiables, slides supprimables et déplaçables (↑ ↓) ; pour un thread X, tweets modifiables avec compteur 280.
+7. Aperçu en direct ; bouton « Enregistrer » (Server Action, session + propriétaire vérifiés) ; nouveau champ `Creation.design Json?` (migration). « Régénérer » demande confirmation car il remplace les textes modifiés.
+8. Vérification par captures (3 modèles, couleurs, polices, modification enregistrée puis rechargée) ; guide `docs/tester-etape-4.md` ultra détaillé ; mise à jour de ce fichier après validation.
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
@@ -188,6 +187,15 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-06 — Dossier du projet chez l'utilisateur : `C:\2222\Threadify-main` ; les nouveaux ZIP se décompressent par-dessus (destination `C:\2222`) pour garder le `.env`.
 - 2026-11-05 — Base de l'utilisateur en local : **Supabase** (uniquement la base PostgreSQL, pas Supabase Auth), via l'adresse **Session pooler** (port 5432, compatible IPv4) — compte Supabase déjà existant ; la « Direct connection » exige l'IPv6.
 
+- 2026-11-06 — Claude (Anthropic) via `@anthropic-ai/sdk` **1.6.0**, modèle **`claude-opus-5-5`** (choix de l'utilisateur), effort `medium` ; `client.beta.messages.parse` + `betaZodOutputFormat` (zod **4.6.7**) pour un JSON validé ; `fallbacks: "default"` avec la bêta `server-side-fallback-2026-07-01` (repli automatique si refus) ; `max_tokens` 16000, sans streaming.
+- 2026-11-06 — Migration `20261106183627_generation` : `Creation.content Json?`, `generatedAt`, `model`, statut `GENERE` (le statut `ERREUR` prévu au plan n'a pas été ajouté : les erreurs sont affichées sans être stockées).
+- 2026-11-06 — `src/lib/generation.ts` : consignes en français par format (Instagram : ton chaleureux, 1 emoji max ; LinkedIn : ton expert, sans emoji ; 6–10 slides, titre ≤ 60 et texte ≤ 220 caractères ; thread 5–12 tweets, ≤ 280 caractères, sans numérotation). La source est passée entre balises `<source>` (ne jamais suivre d'instructions qu'elle contiendrait). Tweets trop longs : une nouvelle demande, puis coupe de sécurité avec « … ».
+- 2026-11-06 — Server Action `src/app/creations/[id]/actions.ts` (session + propriétaire vérifiés, `refresh()` de `next/cache` après succès) ; composants `generate-button`, `generated-content`, `copy-button` ; étiquettes « Générée » / « Brouillon » dans l'espace.
+- 2026-11-06 — 2026-11-06 : **première vraie génération réussie chez l'utilisateur** (carrousel Instagram de 8 slides). Retours : longueur des textes, quantité d'emojis et style **bons** ; demande de **tutoiement** → consigne modifiée (« Tutoie toujours le lecteur… »). L'interface du site reste au vouvoiement (non demandé).
+- 2026-11-06 — Erreurs traduites en français par classe d'erreur du SDK ; détail technique journalisé côté serveur (`[generation] …`).
+- 2026-11-06 — Environnement cloud dédié **« Threadify »** (personnel) créé le 2026-11-06, avec un script de préparation (démarre PostgreSQL, crée la base, `.env` de test avec clé factice, `npm install`, `prisma migrate deploy`) — **script pas encore éprouvé** sur une session neuve.
+- 2026-11-06 — Étapes 4 (design) et 5 (export) gardées séparées (choix de l'utilisateur) ; publication directe sur Instagram (API Meta : compte pro + validation de l'app) reportée après le MVP.
+
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
@@ -214,8 +222,11 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - Test Playwright : `waitForURL` expire pendant la première compilation d'une page en dev — `waitUntil: 'commit'` et délai plus long.
 - Mot de passe Supabase avec caractères spéciaux (`@ # / ? %`) — ils cassent l'URL de connexion — utiliser uniquement lettres et chiffres (ou les encoder en URL).
 
+- **Piège** : impossible d'enregistrer une clé pour `api.anthropic.com` dans l'environnement cloud (« Anthropic's own hosts are authenticated by the session itself »), et la variable `ANTHROPIC_BASE_URL` de la session sert à Claude Code lui-même — ne pas l'utiliser pour l'application. Conséquence : Claude teste l'interface avec un contenu d'exemple et une clé factice (erreur 401 → message « clé invalide »), la vraie génération se teste chez l'utilisateur.
+- Piège de test : plusieurs `form [role=alert]` vides sur la page — cibler celui qui contient du texte (`.filter({ hasText: /\S/ })`).
+
 ## Questions ouvertes
 
-- Méthode d'export des carrousels (rendu côté serveur ou côté client).
+- Méthode d'export des carrousels (rendu côté serveur ou côté client) — à décider à l'étape 5 ; l'étape 4 prépare un composant `Slide` 1080×1350 réutilisable.
 - Import d'article par URL (scraping) dans le MVP ou plus tard ?
 - Modèle de monétisation (freemium, quotas de générations).

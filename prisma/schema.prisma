@@ -2,6 +2,7 @@
 // Étape 1 : modèles d'authentification (Better Auth).
 // Étape 2 : créations (idée ou article + format choisi).
 // Étape 3 : contenu généré par l'IA.
+// Étape 4 : design des carrousels.
 
 generator client {
   provider = "prisma-client"
@@ -109,6 +110,9 @@ model Creation {
   content     Json?
   generatedAt DateTime?
   model       String? // modèle d'IA utilisé pour la dernière génération
+  // Réglages de design du carrousel (modèle, couleurs, police, signature)
+  // — voir src/lib/design.ts
+  design      Json?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 

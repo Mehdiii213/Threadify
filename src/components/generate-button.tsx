@@ -10,7 +10,20 @@ export function GenerateButton({ creationId, regenerate }: { creationId: string;
   );
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (
+          regenerate &&
+          !window.confirm(
+            "Régénérer remplace les textes actuels, y compris vos modifications. Le design est conservé. Continuer ?",
+          )
+        ) {
+          e.preventDefault();
+        }
+      }}
+      className="space-y-3"
+    >
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <button
           type="submit"

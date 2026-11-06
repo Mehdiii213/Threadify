@@ -3,6 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import type { CreationFormat, SourceType } from "@/generated/prisma/client";
+import { SlideSchema, TWEET_MAX, tweetLength, type GeneratedContent } from "@/lib/content";
+
+export { readContent, TWEET_MAX, tweetLength, type GeneratedContent, type Slide } from "@/lib/content";
 
 // ─── Modèle et réglages ───────────────────────────────────────────────────────
 
@@ -14,34 +17,9 @@ const EFFORT = "medium" as const;
 // automatiquement la requête sur le modèle de secours recommandé.
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
-export const TWEET_MAX = 280;
-
-// ─── Formes du contenu généré (stockées dans Creation.content) ───────────────
-
-const SlideSchema = z.object({
-  titre: z.string().describe("Titre court et percutant de la slide"),
-  texte: z.string().describe("Texte de la slide, 1 à 3 phrases courtes"),
-});
+// Schémas envoyés à l'IA (réponse JSON structurée).
 const CarrouselSchema = z.object({ slides: z.array(SlideSchema) });
 const ThreadSchema = z.object({ tweets: z.array(z.string()) });
-
-export type Slide = z.infer<typeof SlideSchema>;
-export type GeneratedContent =
-  | { type: "carrousel"; slides: Slide[] }
-  | { type: "thread"; tweets: string[] };
-
-/** Relit le JSON stocké en base ; renvoie null s'il est absent ou invalide. */
-export function readContent(value: unknown): GeneratedContent | null {
-  const carrousel = z.object({ type: z.literal("carrousel"), slides: z.array(SlideSchema) });
-  const thread = z.object({ type: z.literal("thread"), tweets: z.array(z.string()) });
-  const parsed = z.union([carrousel, thread]).safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
-
-/** Longueur « vue » d'un tweet (les emojis comptent pour un caractère ici). */
-export function tweetLength(tweet: string) {
-  return [...tweet].length;
-}
 
 // ─── Consignes données à l'IA ─────────────────────────────────────────────────
 

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { GenerateButton } from "@/components/generate-button";
-import { GeneratedContentView } from "@/components/generated-content";
+import { CarouselEditor } from "@/components/carousel-editor";
+import { ThreadEditor } from "@/components/thread-editor";
 import { SiteHeader } from "@/components/site-header";
 import { FORMAT_LABELS, SOURCE_LABELS, excerpt, formatDate } from "@/lib/creations";
-import { readContent } from "@/lib/generation";
+import { readContent } from "@/lib/content";
+import { readDesign } from "@/lib/design";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -16,7 +18,7 @@ export default function CreationPage({ params }: PageProps<"/creations/[id]">) {
   return (
     <main className="flex flex-1 flex-col bg-zinc-50 text-zinc-900">
       <SiteHeader />
-      <section className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      <section className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
         <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
           <CreationDetails params={params} />
         </Suspense>
@@ -63,12 +65,22 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
       {content && (
         <section className="mt-8">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-xl font-bold tracking-tight">Résultat</h2>
+            <h2 className="text-xl font-bold tracking-tight">{content.type === "carrousel" ? "Design et textes" : "Résultat"}</h2>
             {creation.generatedAt && (
               <p className="text-xs text-zinc-500">Généré le {formatDate(creation.generatedAt)}</p>
             )}
           </div>
-          <GeneratedContentView content={content} />
+          {/* key : un nouvel éditeur après chaque génération (repart des nouveaux textes) */}
+          {content.type === "carrousel" ? (
+            <CarouselEditor
+              key={creation.generatedAt?.toISOString()}
+              creationId={creation.id}
+              initialSlides={content.slides}
+              initialDesign={readDesign(creation.design, user.name)}
+            />
+          ) : (
+            <ThreadEditor key={creation.generatedAt?.toISOString()} creationId={creation.id} initialTweets={content.tweets} />
+          )}
         </section>
       )}
     </>

@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { GenerateButton } from "@/components/generate-button";
+import { GeneratedContentView } from "@/components/generated-content";
 import { SiteHeader } from "@/components/site-header";
 import { FORMAT_LABELS, SOURCE_LABELS, excerpt, formatDate } from "@/lib/creations";
+import { readContent } from "@/lib/generation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -13,7 +16,7 @@ export default function CreationPage({ params }: PageProps<"/creations/[id]">) {
   return (
     <main className="flex flex-1 flex-col bg-zinc-50 text-zinc-900">
       <SiteHeader />
-      <section className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <section className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <Suspense fallback={<p className="text-zinc-500">Chargement…</p>}>
           <CreationDetails params={params} />
         </Suspense>
@@ -29,36 +32,45 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
   const creation = await prisma.creation.findFirst({ where: { id, userId: user.id } });
   if (!creation) notFound();
 
+  const content = readContent(creation.content);
+
   return (
     <>
       <Link href="/espace" className="text-sm font-medium text-violet-700 hover:underline">
         ← Mon espace
       </Link>
       <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-medium text-emerald-700">✓ Création enregistrée</p>
+        <p className={`text-sm font-medium ${content ? "text-violet-700" : "text-emerald-700"}`}>
+          {content ? "✨ Contenu généré" : "✓ Création enregistrée"}
+        </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">{FORMAT_LABELS[creation.format]}</h1>
         <p className="mt-1 text-sm text-zinc-500">
           {SOURCE_LABELS[creation.sourceType]} · {formatDate(creation.createdAt)}
         </p>
 
-        <blockquote className="mt-6 rounded-xl border-l-4 border-violet-400 bg-zinc-50 p-4 whitespace-pre-line text-zinc-700">
-          {excerpt(creation.sourceText, 600)}
-        </blockquote>
-        <p className="mt-2 text-xs text-zinc-500">
-          {creation.sourceText.length.toLocaleString("fr-FR")} caractères
-        </p>
+        <details className="group mt-6 rounded-xl border-l-4 border-violet-400 bg-zinc-50 p-4" open={!content}>
+          <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
+            Votre texte de départ ({creation.sourceText.length.toLocaleString("fr-FR")} caractères)
+          </summary>
+          <p className="mt-3 whitespace-pre-line text-zinc-700">{excerpt(creation.sourceText, 600)}</p>
+        </details>
 
-        <div className="mt-8 flex flex-col items-start gap-2 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white opacity-50"
-          >
-            ✨ Générer
-          </button>
-          <span className="text-sm text-zinc-500">Disponible à l&apos;étape suivante.</span>
+        <div className="mt-8">
+          <GenerateButton creationId={creation.id} regenerate={Boolean(content)} />
         </div>
       </div>
+
+      {content && (
+        <section className="mt-8">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-bold tracking-tight">Résultat</h2>
+            {creation.generatedAt && (
+              <p className="text-xs text-zinc-500">Généré le {formatDate(creation.generatedAt)}</p>
+            )}
+          </div>
+          <GeneratedContentView content={content} />
+        </section>
+      )}
     </>
   );
 }

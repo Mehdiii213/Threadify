@@ -71,6 +71,13 @@ async function Dashboard() {
                   {FORMAT_LABELS[c.format]}
                 </span>
                 <span className="flex-1 truncate text-zinc-700">{excerpt(c.sourceText, 90)}</span>
+                <span
+                  className={`w-fit shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    c.status === "GENERE" ? "bg-violet-100 text-violet-700" : "bg-zinc-100 text-zinc-600"
+                  }`}
+                >
+                  {c.status === "GENERE" ? "Générée" : "Brouillon"}
+                </span>
                 <span className="shrink-0 text-xs text-zinc-500">
                   {SOURCE_LABELS[c.sourceType]} · {formatDate(c.createdAt)}
                 </span>

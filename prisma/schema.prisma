@@ -1,6 +1,7 @@
 // Schéma Prisma de Threadify
 // Étape 1 : modèles d'authentification (Better Auth).
 // Étape 2 : créations (idée ou article + format choisi).
+// Étape 3 : contenu généré par l'IA.
 
 generator client {
   provider = "prisma-client"
@@ -92,18 +93,24 @@ enum CreationFormat {
 
 enum CreationStatus {
   BROUILLON // saisi, pas encore généré par l'IA
+  GENERE // contenu généré par l'IA (voir Creation.content)
 }
 
 model Creation {
-  id         String         @id @default(cuid())
-  userId     String
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceType SourceType
-  sourceText String
-  format     CreationFormat
-  status     CreationStatus @default(BROUILLON)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType  SourceType
+  sourceText  String
+  format      CreationFormat
+  status      CreationStatus @default(BROUILLON)
+  // Résultat de l'IA : { type: "carrousel", slides: [{ titre, texte }] }
+  // ou { type: "thread", tweets: [string] } (voir src/lib/generation.ts)
+  content     Json?
+  generatedAt DateTime?
+  model       String? // modèle d'IA utilisé pour la dernière génération
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([userId, createdAt])
   @@map("creation")

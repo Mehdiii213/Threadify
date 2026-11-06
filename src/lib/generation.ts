@@ -49,7 +49,7 @@ const COMMON_RULES = `Tu es un rédacteur francophone expert des réseaux sociau
 
 Règles générales :
 - Écris en français, avec une orthographe et une typographie françaises soignées (espaces avant « : ; ! ? », guillemets « »).
-- Adresse-toi au lecteur en le vouvoyant, sauf si la source tutoie clairement.
+- Tutoie toujours le lecteur (« tu », « ton », « tes »), même si la source vouvoie. N'utilise jamais « vous » pour t'adresser au lecteur.
 - Sois concret et utile : exemples, chiffres ou conseils actionnables plutôt que des généralités.
 - N'invente pas de faits précis (chiffres, citations, études) absents de la source ; reste général si besoin.
 - Pas de hashtags, sauf éventuellement un ou deux à la toute fin.

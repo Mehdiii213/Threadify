@@ -123,39 +123,25 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 - [x] Étape 0 — Initialisation du projet (Next.js + Tailwind + Prisma + PostgreSQL) — validée le 2026-11-03
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
-- [ ] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — **codée et testée par Claude (commit `a603d7c`), en attente de validation par l'utilisateur**
+- [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
 - [ ] Étape 3 — Génération IA du contenu (slides / tweets)
 - [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices)
 - [ ] Étape 5 — Export (PNG / PDF / texte)
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
-## Reprise — prochaine étape (point au 2026-11-05, soir)
+## Reprise — prochaine étape (point au 2026-11-06)
 
-- Étapes 0 et 1 validées. Étape 1 validée par l'utilisateur sans problème signalé (le piège « engine » de npm 11.20 ne s'est pas manifesté, ou a été résolu avec le guide).
-- **Où en est l'utilisateur (fin de soirée du 2026-11-05)** : nouvelle version installée dans **`C:\2222\Threadify-main`** (l'ancien dossier a été supprimé par erreur → `.env` **recréé** depuis `.env.example` avec l'adresse Supabase « Session pooler » et une **nouvelle** `BETTER_AUTH_SECRET`), `npm install` OK, `npx prisma migrate deploy` OK, `npm run dev` OK : accueil affiché avec pastille verte. **Il reste à faire le parcours de test de l'étape 2** (étape H de `docs/tester-etape-2.md` : se reconnecter — la nouvelle clé l'a déconnecté —, créer une idée et un article, voir la liste). À la reprise : rappeler comment relancer le site (Explorateur → `C:\2222\Threadify-main` → barre d'adresse `cmd` → `npm run dev` → `localhost:3000`), puis guider l'étape H et attendre « validé ».
-- **Étape 2 : plan validé, codée, testée par Claude (captures envoyées), poussée (`a603d7c`)**. L'utilisateur doit la tester avec **`docs/tester-etape-2.md`** (nouveau ZIP décompressé **par-dessus** `C:\Users\mehdi\Threadify-main` — le `.env` est conservé —, `npm install`, `npx prisma migrate deploy`, `npm run dev`, parcours de test). À la reprise : demander le résultat ; une fois validée, reporter les décisions/pièges ci-dessous dans le journal, cocher l'étape, puis proposer le plan de l'étape 3 (génération IA : choisir le fournisseur d'IA — question ouverte).
+- Étapes 0, 1 et 2 validées. Chez l'utilisateur, le projet tourne dans `C:\2222\Threadify-main` avec Supabase (parcours de l'étape 2 testé avec succès).
+- **Prochaine étape : 3 — génération IA. Plan proposé le 2026-11-06, PAS encore validé** : le représenter et attendre l'accord (et le choix du modèle) avant de coder.
 
-### Décisions et pièges de l'étape 2 (à reporter dans le journal une fois validée)
+### Plan proposé — Étape 3 : génération par l'IA
 
-- Modèle `Creation` (`@@map("creation")`, id `cuid()`, index `[userId, createdAt]`) + enums `SourceType` (IDEE/ARTICLE), `CreationFormat` (CARROUSEL_INSTAGRAM/CARROUSEL_LINKEDIN/THREAD_X), `CreationStatus` (BROUILLON) ; migration `20261105201520_creations`.
-- Limites : idée 10–500 caractères, article 200–20 000 ; règles et libellés partagés dans `src/lib/creations.ts` ; validation **côté serveur** dans la Server Action `src/app/creer/actions.ts` (`useActionState` côté client, valeurs saisies renvoyées pour ne rien perdre).
-- `/creations/[id]` : requête filtrée par `userId` → `notFound()` pour la création d'un autre compte ; page `src/app/not-found.tsx` en français. Comme `notFound()` est appelé dans un `<Suspense>` (Cache Components), le statut HTTP reste 200 mais le contenu n'est pas exposé.
-- « Commencer gratuitement » → `/creer` ; le proxy envoie un visiteur sans session de `/creer` vers `/inscription` ; après inscription → `/creer`, après connexion → `/espace`.
-- **Piège** : après connexion/inscription, `router.push()` rejouait une redirection mémorisée par le routeur client (`/creer` → `/inscription` vue avant la connexion) et `router.refresh()` rechargeait `/inscription` que le proxy renvoie vers `/espace` — **solution** : navigation complète `window.location.assign()` après connexion, inscription et déconnexion (exception ESLint commentée dans `sign-out-button.tsx`).
-- **Piège chez l'utilisateur** : ZIP décompressé dans un nouveau dossier (`C:\2222\Threadify-main`) sans `.env` → `npm install` échouait au `postinstall` (`PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL`) — solution : copier le `.env` de l'ancien dossier ; et `prisma.config.ts` utilise désormais `process.env.DATABASE_URL` au lieu de `env()` pour que `prisma generate` marche sans `.env`.
-- **Piège chez l'utilisateur** : `P1013: The provided database string is invalid. The scheme is not recognized` au `migrate deploy` — ligne `DATABASE_URL` mal formée dans le `.env` recréé (texte avant `postgresql://`, ligne en double…) — réécrire la ligne proprement ; commande de diagnostic qui masque le mot de passe : `node -e "require('dotenv').config();const u=process.env.DATABASE_URL||'';console.log(JSON.stringify(u.replace(/:[^:@\/]*@/,':****@')))"`.
-- Ancien dossier supprimé par erreur → `.env` perdu — il n'est jamais dans le ZIP — le recréer : `copy .env.example .env`, adresse Supabase (bouton Connect → Session pooler), nouvelle clé via `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` ; les comptes restent dans Supabase, seule la session est perdue.
-- Piège de test : `waitForURL` peut expirer pendant la première compilation d'une page en dev — utiliser `waitUntil: 'commit'` et un délai plus long ; texte « Trop court » = 10 caractères, donc valide.
-
-### Plan proposé — Étape 2 : écran de saisie et choix du format
-
-1. Modèle Prisma `Creation` (id, userId → User avec suppression en cascade, `sourceType` enum IDEE/ARTICLE, `sourceText`, `format` enum CARROUSEL_INSTAGRAM/CARROUSEL_LINKEDIN/THREAD_X, `status` enum BROUILLON (GENERE plus tard), createdAt/updatedAt) + migration `creations`.
-2. Page protégée `/creer` : deux onglets « Une idée » (zone courte, 10 à 500 caractères) / « Un article » (zone longue, 200 à 20 000 caractères, compteur), trois cartes cliquables pour le format (avec dimensions : 1080×1350 Instagram, 1080×1350 PDF LinkedIn, thread X), bouton « Continuer ».
-3. Server Action `createCreation` : vérifie la session, valide les champs côté serveur (messages en français), enregistre en base, redirige vers `/creations/[id]`.
-4. Page `/creations/[id]` (protégée, uniquement pour son propriétaire, sinon page 404) : récapitulatif (format, extrait du texte) + bouton « Générer » désactivé « Disponible à l'étape suivante ».
-5. `/espace` : bouton « + Nouvelle création » et liste simple des créations (format, début du texte, date) ; accueil : « Commencer gratuitement » mène à `/creer` si connecté.
-6. Import d'article par **URL** : reporté (question ouverte) — collage du texte uniquement.
-7. Vérification par captures Playwright (saisie, erreur de validation, récapitulatif, liste dans l'espace, accès refusé à la création d'un autre compte) ; guide utilisateur `docs/` ultra détaillé (nouveau ZIP, `npm install`, `npx prisma migrate deploy`, test) ; mise à jour de ce fichier après validation.
+- **Fournisseur proposé : Claude (Anthropic)**, SDK officiel `@anthropic-ai/sdk`, clé `ANTHROPIC_API_KEY` dans `.env` (compte sur platform.claude.com avec quelques euros de crédit prépayé). Modèle par défaut **`claude-opus-5-5`** (4 $ / 20 $ par million de tokens en entrée / sortie) ; alternatives au choix de l'utilisateur : `claude-sonnet-5-5` (2 $ / 10 $), `claude-haiku-5-5` (0,10 $ / 0,50 $). Estimation : quelques centimes par génération avec Opus 5.5. Sur Opus 5.5 la réflexion ne se désactive pas : régler `output_config.effort` (défaut `medium`) ; activer les `fallbacks` côté serveur (refus) par défaut ; sortie JSON structurée via `output_config.format`.
+1. Schéma : `Creation.content Json?` (résultat), statuts `GENERE` et `ERREUR` ajoutés à `CreationStatus`, `generatedAt` ; migration.
+2. `src/lib/generation.ts` (serveur uniquement) : consignes en français par format — carrousel : 6 à 10 slides `{titre, texte}` (accroche en slide 1, appel à l'action en dernière) ; thread X : 5 à 12 tweets ≤ 280 caractères (vérifiés côté serveur).
+3. `/creations/[id]` : bouton « ✨ Générer » actif (Server Action, session + propriétaire vérifiés), état « Génération en cours… », puis affichage : slides en cartes simples (le vrai design viendra à l'étape 4) ; tweets numérotés avec compteur de caractères et bouton « Copier ». Bouton « Régénérer ».
+4. Erreurs en français (clé absente, crédit épuisé, surcharge, refus).
+5. Vérification par captures ; guide `docs/` clic par clic pour créer la clé API, l'ajouter au `.env`, `npm install`, `npx prisma migrate deploy`, tester.
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
@@ -185,6 +171,14 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-05 — Formulaires d'auth côté client avec `authClient` (`better-auth/react`), erreurs traduites par code (`src/lib/auth-errors.ts`) — Better Auth renvoie des messages en anglais.
 - 2026-11-05 — Projet de l'utilisateur déplacé hors de OneDrive (`C:\Users\mehdi\Threadify-main`) — installation 9 min dans OneDrive.
 - 2026-11-05 — Guides utilisateur ultra détaillés dans `docs/` (description de la fenêtre cmd, écrans attendus) — l'utilisateur débute complètement.
+- 2026-11-05 — Modèle `Creation` (`@@map("creation")`, id `cuid()`, index `[userId, createdAt]`) + enums `SourceType` (IDEE/ARTICLE), `CreationFormat` (CARROUSEL_INSTAGRAM/CARROUSEL_LINKEDIN/THREAD_X), `CreationStatus` (BROUILLON), migration `20261105201520_creations` — base des créations du MVP.
+- 2026-11-05 — Limites : idée 10–500 caractères, article 200–20 000 ; règles et libellés partagés dans `src/lib/creations.ts` ; validation côté serveur dans la Server Action `src/app/creer/actions.ts` (`useActionState`, valeurs saisies renvoyées) — sécurité et confort.
+- 2026-11-05 — `/creations/[id]` filtré par `userId` → `notFound()` (page 404 en français `src/app/not-found.tsx`) ; dans un `<Suspense>`, le statut HTTP reste 200 mais rien n'est exposé — isolation des données entre comptes.
+- 2026-11-05 — « Commencer gratuitement » → `/creer` ; sans session, le proxy renvoie `/creer` vers `/inscription` ; après inscription → `/creer`, après connexion → `/espace` — parcours le plus court vers la première création.
+- 2026-11-05 — Navigation complète `window.location.assign()` après connexion, inscription et déconnexion — le routeur client rejouait des redirections mémorisées avant le changement de session.
+- 2026-11-05 — Import d'article par URL reporté — collage du texte uniquement pour le MVP.
+- 2026-11-05 — `prisma.config.ts` lit `process.env.DATABASE_URL` (et non `env()`) — `npm install` (postinstall `prisma generate`) doit marcher même sans `.env`.
+- 2026-11-06 — Dossier du projet chez l'utilisateur : `C:\2222\Threadify-main` ; les nouveaux ZIP se décompressent par-dessus (destination `C:\2222`) pour garder le `.env`.
 - 2026-11-05 — Base de l'utilisateur en local : **Supabase** (uniquement la base PostgreSQL, pas Supabase Auth), via l'adresse **Session pooler** (port 5432, compatible IPv4) — compte Supabase déjà existant ; la « Direct connection » exige l'IPv6.
 
 ## Pièges rencontrés
@@ -206,6 +200,11 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - `@better-auth/cli generate` en retard de version (1.4 vs 1.7) — publication séparée du CLI — générer le schéma Prisma à la main à partir de `getAuthTables()`.
 - Test Playwright : `getByRole('alert')` capture l'annonceur de route de Next.js (qui contient le titre de la page) — cibler `form [role=alert]`.
 - Première capture prise pendant la compilation (« Un instant… » / « Compiling ») — premier rendu lent en dev — attendre un élément précis avant la capture.
+- Après connexion/inscription, `router.push()` rejouait une redirection mémorisée (`/creer` → `/inscription`) et `router.refresh()` rechargeait `/inscription`, renvoyée vers `/espace` par le proxy — cache du routeur client — navigation complète `window.location.assign()` (exception ESLint commentée dans `sign-out-button.tsx`).
+- `npm install` échouait au postinstall avec `PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL` — ZIP décompressé dans un nouveau dossier sans `.env` — copier/recréer le `.env` ; `prisma.config.ts` utilise désormais `process.env`.
+- `P1013: The provided database string is invalid. The scheme is not recognized` — ligne `DATABASE_URL` mal formée (texte avant `postgresql://`, ligne en double) — réécrire la ligne ; diagnostic sans montrer le mot de passe : `node -e "require('dotenv').config();const u=process.env.DATABASE_URL||'';console.log(JSON.stringify(u.replace(/:[^:@\/]*@/,':****@')))"`.
+- Ancien dossier supprimé par erreur → `.env` perdu — il n'est jamais dans le ZIP — `copy .env.example .env`, adresse Supabase (Connect → Session pooler), nouvelle clé `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` ; les comptes restent dans Supabase, seule la session est perdue.
+- Test Playwright : `waitForURL` expire pendant la première compilation d'une page en dev — `waitUntil: 'commit'` et délai plus long.
 - Mot de passe Supabase avec caractères spéciaux (`@ # / ? %`) — ils cassent l'URL de connexion — utiliser uniquement lettres et chiffres (ou les encoder en URL).
 
 ## Questions ouvertes

@@ -83,8 +83,13 @@ src/app/creations/[id]/     # récapitulatif d'une création (propriétaire uniq
 src/app/not-found.tsx       # page 404 en français
 src/lib/creations.ts        # limites, libellés des formats, extraits, dates FR
 src/lib/generation.ts       # appel à Claude, consignes par format, schémas JSON, erreurs FR
+src/lib/content.ts          # forme du contenu (slides/tweets), limites — partagé client/serveur
+src/lib/design.ts           # modèles, palettes, polices, signature, contraste — partagé
+src/lib/fonts.ts            # polices des slides (next/font/google)
+src/components/slide.tsx    # slide 1080×1350 + miniature (réutilisée pour l'export)
+src/components/carousel-editor.tsx, thread-editor.tsx  # éditeurs (client)
 src/app/creations/[id]/actions.ts  # Server Action generateCreation
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2, tester-etape-3)
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2/3/4)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -128,14 +133,25 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 1 — Authentification avec Better Auth (inscription, connexion, déconnexion) — validée le 2026-11-05
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
-- [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — **plan proposé le 2026-11-06, à valider**
+- [ ] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — **codée et testée par Claude (commit `bb98dd8`), en attente de validation par l'utilisateur**
 - [ ] Étape 5 — Export (PNG / PDF / texte) — prévu : ZIP de PNG 1080×1350 numérotés pour Instagram, PDF pour LinkedIn, texte pour X
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 
 ## Reprise — prochaine étape (point au 2026-11-06, soir)
 
 - Étapes 0 à 3 validées. Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération réelle testée avec succès (carrousel + tutoiement).
-- **Étape 4 : plan proposé le 2026-11-06, PAS encore validé** — le représenter et attendre l'accord avant de coder.
+- **Étape 4 : plan validé, codée, testée par Claude (captures avec un contenu d'exemple écrit à la main), poussée (`bb98dd8`).** L'utilisateur doit la tester avec `docs/tester-etape-4.md` (ZIP par-dessus `C:\2222`, `npm install`, `npx prisma migrate deploy`, `npm run dev`). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal, puis proposer le plan de l'étape 5 (export : choisir la méthode de rendu PNG/PDF).
+
+### Décisions et pièges de l'étape 4 (à reporter dans le journal une fois validée)
+
+- `src/components/slide.tsx` : slide 1080×1350 en **styles en ligne** (pixels), `SlideThumbnail` la réduit avec `transform: scale` — même composant prévu pour l'export (étape 5). Couverture (grand titre, « Glisse → »), slides du milieu numérotées 01, 02…, dernière slide avec texte mis en valeur.
+- `src/lib/design.ts` (partagé client/serveur) : 3 modèles (`minimal`, `audacieux`, `degrade` — dégradé via `color-mix`), 6 palettes, 4 polices (`src/lib/fonts.ts`, `next/font/google` : Inter, Montserrat, Poppins, Playfair Display), signature (nom, @pseudo, initiales) ; `DesignSchema` zod ; design par défaut : Minimal + Violet + Inter + nom du compte.
+- Couleur du texte sur fond d'accent choisie par **contraste WCAG** (blanc ou #111111, le plus contrasté) — un simple seuil de luminance donnait du blanc illisible sur le bleu clair de la palette Nuit.
+- `src/lib/content.ts` : schémas et limites du contenu partagés client/serveur (`generation.ts` reste `server-only` et réexporte). Limites : 15 slides, titre 120, texte 500 ; 25 tweets ≤ 280.
+- Éditeurs client `carousel-editor.tsx` et `thread-editor.tsx` : aperçu en direct, ↑ ↓, ajout (avant la dernière slide), suppression, bouton Enregistrer (Server Actions `saveCarousel` / `saveThread` validées par zod, propriétaire vérifié), avertissement `beforeunload` si non enregistré. `key={generatedAt}` pour repartir des nouveaux textes après une génération.
+- « Régénérer » demande confirmation (`window.confirm`) car il remplace les textes modifiés ; le design est conservé. Migration `20261106195716_design` (`Creation.design Json?`).
+- Interface au vouvoiement, contenus des slides au tutoiement (« Glisse → », « Ton texte ici. »).
+- Piège de test : `getByLabel('Tweet 2')` attrape aussi les boutons « Monter le tweet 2 » — utiliser `getByRole('textbox', { name: 'Tweet 2', exact: true })`.
 
 ### Plan proposé — Étape 4 : éditeur de carrousel (design)
 

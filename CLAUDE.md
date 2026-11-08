@@ -141,10 +141,10 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-06, fin de journée)
+## Reprise — prochaine étape (point au 2026-11-08, fin de journée)
 
 - **Étapes 0 à 4 validées** (étape 4 validée le 2026-11-06 : « c'est nickel »). Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération et éditeur de design testés avec succès.
-- **Étape 5 — export : plan validé le 2026-11-08 (avec les 3 dépendances), codée, testée par Claude, poussée (`7c01f09`).** L'utilisateur doit la tester avec `docs/tester-etape-5.md` (ZIP par-dessus `C:\2222`, `npm install` — pas de migration —, `npm run dev`, télécharger ZIP / PDF / slide seule / .txt, publier). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal et proposer le plan de l'étape 6.
+- **Étape 5 — export : plan validé le 2026-11-08 (avec les 3 dépendances), codée, testée par Claude, poussée (`7c01f09`).** L'utilisateur doit la tester avec `docs/tester-etape-5.md` (ZIP par-dessus `C:\2222`, `npm install` — pas de migration —, `npm run dev`, télécharger ZIP / PDF / slide seule / .txt, publier). **Au 2026-11-08 soir, l'utilisateur n'a encore RIEN testé de l'étape 5** (« on reprend demain ici »). À la reprise : rappeler en mots simples comment relancer le site, puis le guider pas à pas dans `docs/tester-etape-5.md` (A → H, puis publication Instagram/LinkedIn), en demandant des captures. Prévenir que le premier téléchargement peut prendre ~30 s en local. Après « validé », reporter les décisions ci-dessous dans le journal, cocher l'étape 5 et proposer le plan de l'étape 6 (tableau de bord).
 
 ### Décisions et pièges de l'étape 5 (à reporter dans le journal une fois validée)
 

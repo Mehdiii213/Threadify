@@ -50,7 +50,8 @@ export function Slide({ slide, index, total, design }: Props) {
   const titleSize = isCover ? (bold ? 112 : 96) : bold ? 80 : 68;
 
   return (
-    <div style={root}>
+    // data-slide-root : repère utilisé par l'export (src/lib/export.ts)
+    <div style={root} data-slide-root="">
       {/* En-tête : numéro de la slide (sauf couverture) */}
       <div style={{ height: 120, display: "flex", alignItems: "flex-start" }}>
         {!isCover && !isLast && (

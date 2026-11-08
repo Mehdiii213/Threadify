@@ -71,16 +71,17 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
             )}
           </div>
           {/* key : un nouvel éditeur après chaque génération (repart des nouveaux textes) */}
-          {content.type === "carrousel" ? (
+          {content.type === "carrousel" && creation.format !== "THREAD_X" ? (
             <CarouselEditor
               key={creation.generatedAt?.toISOString()}
               creationId={creation.id}
               initialSlides={content.slides}
               initialDesign={readDesign(creation.design, user.name)}
+              format={creation.format}
             />
-          ) : (
+          ) : content.type === "thread" ? (
             <ThreadEditor key={creation.generatedAt?.toISOString()} creationId={creation.id} initialTweets={content.tweets} />
-          )}
+          ) : null}
         </section>
       )}
     </>

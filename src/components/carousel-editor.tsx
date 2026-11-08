@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { saveCarousel } from "@/app/creations/[id]/actions";
 import { SlideThumbnail } from "@/components/slide";
 import { SLIDES_MAX, TEXTE_MAX, TITRE_MAX, type Slide } from "@/lib/content";
 import { FONTS, PALETTES, TEMPLATES, type Colors, type Design } from "@/lib/design";
+import { exportSingleSlide, exportSlidesPdf, exportSlidesZip, slugify } from "@/lib/export";
 import { SLIDE_FONTS } from "@/lib/fonts";
 
-type Props = { creationId: string; initialSlides: Slide[]; initialDesign: Design };
+type Props = { creationId: string; initialSlides: Slide[]; initialDesign: Design; format: "CARROUSEL_INSTAGRAM" | "CARROUSEL_LINKEDIN" };
 
 const field =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200";
 const sectionTitle = "mb-3 text-sm font-semibold text-zinc-900";
 
-export function CarouselEditor({ creationId, initialSlides, initialDesign }: Props) {
+export function CarouselEditor({ creationId, initialSlides, initialDesign, format }: Props) {
+  const slidesRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [slides, setSlides] = useState(initialSlides);
   const [design, setDesign] = useState(initialDesign);
   const [dirty, setDirty] = useState(false);
@@ -77,6 +81,39 @@ export function CarouselEditor({ creationId, initialSlides, initialDesign }: Pro
       }
     });
   }
+
+  const baseName = slugify(slides[0]?.titre || "carrousel");
+  const slideNodes = () =>
+    Array.from(slidesRef.current?.querySelectorAll<HTMLElement>("[data-slide-root]") ?? []);
+
+  async function runExport(kind: "zip" | "pdf" | number) {
+    setExportError(null);
+    try {
+      if (typeof kind === "number") {
+        setExporting(`Préparation de la slide ${kind + 1}…`);
+        await exportSingleSlide(slideNodes()[kind], baseName, kind);
+      } else {
+        // Message immédiat : le premier téléchargement charge les outils d'export.
+        setExporting("Préparation du téléchargement…");
+        const progress = (current: number, total: number) =>
+          setExporting(`Préparation de l'image ${current} sur ${total}…`);
+        if (kind === "zip") await exportSlidesZip(slideNodes(), baseName, progress);
+        else await exportSlidesPdf(slideNodes(), baseName, progress);
+      }
+    } catch (error) {
+      console.error("[export]", error);
+      setExportError("Le téléchargement a échoué. Réessayez, ou essayez avec un autre navigateur (Chrome, Edge).");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  const zipFirst = format === "CARROUSEL_INSTAGRAM";
+  const exportButtons = [
+    { kind: "zip" as const, label: "⬇ Télécharger les images (ZIP)" },
+    { kind: "pdf" as const, label: "⬇ Télécharger le PDF" },
+  ];
+  if (!zipFirst) exportButtons.reverse();
 
   const currentPalette = PALETTES.find(
     (p) =>
@@ -230,7 +267,45 @@ export function CarouselEditor({ creationId, initialSlides, initialDesign }: Pro
       </aside>
 
       {/* ── Slides ───────────────────────────────────────────────── */}
-      <div className="space-y-5">
+      <div className="space-y-5" ref={slidesRef}>
+        {/* Téléchargement */}
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {exportButtons.map((b, i) => (
+              <button
+                key={b.kind}
+                type="button"
+                onClick={() => runExport(b.kind)}
+                disabled={exporting !== null}
+                className={
+                  i === 0
+                    ? "rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700 disabled:opacity-60"
+                    : "rounded-xl border border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-60"
+                }
+              >
+                {b.label}
+              </button>
+            ))}
+            {exporting && (
+              <span className="flex items-center gap-2 text-sm text-violet-800" aria-live="polite">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-300 border-t-violet-700" aria-hidden />
+                {exporting}
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-violet-900/70">
+            {zipFirst
+              ? "Instagram : une image PNG par slide (1080 × 1350), numérotées dans l'ordre."
+              : "LinkedIn : un document PDF, une page par slide — à ajouter avec « Ajouter un document »."}
+            {dirty && " Le téléchargement reprend ce qui est affiché ; pensez à enregistrer vos modifications."}
+          </p>
+          {exportError && (
+            <p role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {exportError}
+            </p>
+          )}
+        </div>
+
         {slides.map((slide, i) => (
           <div
             key={i}
@@ -261,6 +336,16 @@ export function CarouselEditor({ creationId, initialSlides, initialDesign }: Pro
                     className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 disabled:opacity-30"
                   >
                     ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runExport(i)}
+                    disabled={exporting !== null}
+                    aria-label={`Télécharger la slide ${i + 1}`}
+                    title="Télécharger cette slide (PNG)"
+                    className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 disabled:opacity-30"
+                  >
+                    ⬇
                   </button>
                   <button
                     type="button"

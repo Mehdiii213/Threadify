@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { saveThread } from "@/app/creations/[id]/actions";
 import { CopyButton } from "@/components/copy-button";
 import { TWEETS_MAX, TWEET_MAX, tweetLength } from "@/lib/content";
+import { exportThreadTxt, slugify } from "@/lib/export";
 
 export function ThreadEditor({ creationId, initialTweets }: { creationId: string; initialTweets: string[] }) {
   const [tweets, setTweets] = useState(initialTweets);
@@ -64,6 +65,13 @@ export function ThreadEditor({ creationId, initialTweets }: { creationId: string
         </p>
         <div className="flex gap-2">
           <CopyButton text={all} label="Copier tout le thread" />
+          <button
+            type="button"
+            onClick={() => exportThreadTxt(tweets, slugify(tweets[0] ?? "thread"))}
+            className="shrink-0 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+          >
+            ⬇ Télécharger en .txt
+          </button>
           <button
             type="button"
             onClick={save}

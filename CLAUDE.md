@@ -58,6 +58,7 @@ Ne pas remplacer ni ajouter d'alternative à ces briques (pas d'autre ORM, pas d
 - Prisma **7.10.1** (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) + driver `pg`
 - Better Auth **1.7.18**
 - `@anthropic-ai/sdk` **1.6.0**, zod **4.6.7** (modèle `claude-opus-5-5`)
+- Export : `modern-screenshot` **4.7.0**, `jszip` **3.10.2**, `jspdf` **4.2.1**
 - PostgreSQL **16**, Node.js 22
 
 > Next.js 16 a des API différentes des versions précédentes : consulter `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
@@ -89,7 +90,8 @@ src/lib/fonts.ts            # polices des slides (next/font/google)
 src/components/slide.tsx    # slide 1080×1350 + miniature (réutilisée pour l'export)
 src/components/carousel-editor.tsx, thread-editor.tsx  # éditeurs (client)
 src/app/creations/[id]/actions.ts  # Server Action generateCreation
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2/3/4)
+src/lib/export.ts           # export navigateur : PNG (modern-screenshot), ZIP (jszip), PDF (jspdf), .txt
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2/3/4/5)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -134,7 +136,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
-- [ ] Étape 5 — Export (PNG / PDF / texte) — prévu : ZIP de PNG 1080×1350 numérotés pour Instagram, PDF pour LinkedIn, texte pour X
+- [ ] Étape 5 — Export (PNG / PDF / texte) — **codée et testée par Claude (commit `7c01f09`), en attente de validation par l'utilisateur**
 - [ ] Étape 6 — Tableau de bord des créations sauvegardées
 - [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
@@ -142,7 +144,15 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## Reprise — prochaine étape (point au 2026-11-06, fin de journée)
 
 - **Étapes 0 à 4 validées** (étape 4 validée le 2026-11-06 : « c'est nickel »). Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération et éditeur de design testés avec succès.
-- **Étape 5 — export : plan proposé le 2026-11-08, PAS encore validé** — le représenter et attendre l'accord (et le choix de la méthode) avant de coder.
+- **Étape 5 — export : plan validé le 2026-11-08 (avec les 3 dépendances), codée, testée par Claude, poussée (`7c01f09`).** L'utilisateur doit la tester avec `docs/tester-etape-5.md` (ZIP par-dessus `C:\2222`, `npm install` — pas de migration —, `npm run dev`, télécharger ZIP / PDF / slide seule / .txt, publier). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal et proposer le plan de l'étape 6.
+
+### Décisions et pièges de l'étape 5 (à reporter dans le journal une fois validée)
+
+- Export **dans le navigateur** : `src/lib/export.ts` (`modern-screenshot` 4.7.0 `domToCanvas`, `jszip` 3.10.2, `jspdf` 4.2.1, chargés par `import()` au clic) ; chaque slide affichée porte `data-slide-root` et est capturée à 1080×1350 (`scale: 1`) après `document.fonts.ready` — polices `next/font` et dégradés `color-mix` rendus fidèlement (vérifié sur les fichiers).
+- ZIP `threadify-<titre>.zip` avec `slide-01.png`… (~1 Mo par image) ; PDF `jsPDF({ unit: "px", format: [1080, 1350], hotfixes: ["px_scaling"] })`, images JPEG 0,92 (PDF ~0,5 Mo pour 5 pages, MediaBox 810×1012,5 pt = 4:5) ; slide seule en PNG ; thread en `.txt` (tweets numérotés séparés par `---`). Noms de fichiers via `slugify()` du premier titre.
+- Bouton principal selon le format (ZIP pour Instagram, PDF pour LinkedIn), les deux toujours proposés ; l'export reprend l'état **affiché** de l'éditeur (rappel d'enregistrer si modifications en cours).
+- Piège : le **premier** export prend ~30 s en `npm run dev` (compilation à la demande des bibliothèques), sans retour visuel — ajout d'un message « Préparation du téléchargement… » immédiat ; en production (`next build` + `next start`), 0,6 s.
+- Script de préparation de l'environnement cloud « Threadify » : au démarrage de la session du 2026-11-08, PostgreSQL était **arrêté** (`.env` et dépendances présents) — démarrer avec `service postgresql start` si besoin.
 
 ### Plan proposé — Étape 5 : export
 

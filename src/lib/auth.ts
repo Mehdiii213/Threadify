@@ -3,16 +3,15 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { stripe } from "@better-auth/stripe";
-import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { stripeClient } from "@/lib/stripe";
 
 // Paiement Stripe (étape 7) : activé seulement si les clés sont dans .env,
 // pour que le site fonctionne aussi sans compte Stripe configuré.
-const stripeKey = process.env.STRIPE_SECRET_KEY;
-const stripePlugins = stripeKey
+const stripePlugins = stripeClient
   ? [
       stripe({
-        stripeClient: new Stripe(stripeKey),
+        stripeClient,
         stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
         createCustomerOnSignUp: true,
         subscription: {

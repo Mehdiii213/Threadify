@@ -1,6 +1,7 @@
 import "server-only";
 import { EXPERT_HOURLY_LIMIT, PLANS, isPlanId, type PlanId } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
+import { stripeClient } from "@/lib/stripe";
 
 // Abonnement et quotas côté serveur.
 
@@ -67,4 +68,37 @@ export async function checkQuota(userId: string): Promise<{ ok: true } | { ok: f
 
 export async function recordGeneration(userId: string, creationId: string) {
   await prisma.generationEvent.create({ data: { userId, creationId } });
+}
+
+/**
+ * Met à jour l'abonnement local d'après Stripe (résiliation, renouvellement…).
+ * En production, les webhooks Stripe s'en chargent ; cette synchronisation à la
+ * visite de « Mon abonnement » évite d'installer la Stripe CLI pour tester en local.
+ */
+export async function syncSubscriptionFromStripe(userId: string) {
+  if (!stripeClient) return;
+  const subs = await prisma.subscription.findMany({
+    where: { referenceId: userId, stripeSubscriptionId: { not: null }, status: { in: ["active", "trialing", "past_due"] } },
+  });
+  for (const sub of subs) {
+    try {
+      const remote = await stripeClient.subscriptions.retrieve(sub.stripeSubscriptionId!);
+      const item = remote.items.data[0];
+      const date = (s?: number | null) => (s ? new Date(s * 1000) : null);
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: {
+          status: remote.status,
+          cancelAtPeriodEnd: remote.cancel_at_period_end,
+          cancelAt: date(remote.cancel_at),
+          canceledAt: date(remote.canceled_at),
+          endedAt: date(remote.ended_at),
+          periodStart: date(item?.current_period_start) ?? sub.periodStart,
+          periodEnd: date(item?.current_period_end) ?? sub.periodEnd,
+        },
+      });
+    } catch (error) {
+      console.error("[abonnement] Synchronisation Stripe impossible :", error instanceof Error ? error.message : error);
+    }
+  }
 }

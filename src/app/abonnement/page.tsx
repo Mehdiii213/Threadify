@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ManageButton, UpgradeButton } from "@/components/billing-buttons";
 import { SiteHeader } from "@/components/site-header";
-import { billingEnabled, getActiveSubscription, getUsage } from "@/lib/billing";
+import { billingEnabled, getActiveSubscription, getUsage, syncSubscriptionFromStripe } from "@/lib/billing";
 import { formatDate } from "@/lib/creations";
 import { PLANS } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
@@ -29,6 +29,7 @@ export default function AbonnementPage({ searchParams }: PageProps<"/abonnement"
 
 async function Subscription({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ user }, sp] = await Promise.all([requireSession(), searchParams]);
+  await syncSubscriptionFromStripe(user.id);
   const [usage, sub] = await Promise.all([getUsage(user.id), getActiveSubscription(user.id)]);
   const plan = PLANS[usage.plan];
   const billingOn = billingEnabled();

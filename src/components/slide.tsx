@@ -7,7 +7,8 @@ import { SLIDE_FONTS } from "@/lib/fonts";
 // Styles « en ligne » et tailles en pixels : ce même composant servira à
 // l'export PNG / PDF (étape 5), pour que le fichier soit identique à l'aperçu.
 
-type Props = { slide: SlideContent; index: number; total: number; design: Design };
+// watermark : filigrane « Fait avec Threadify » (offre Gratuit, étape 7)
+type Props = { slide: SlideContent; index: number; total: number; design: Design; watermark?: boolean };
 
 function palette(design: Design) {
   const { background, text, accent } = design.colors;
@@ -27,7 +28,7 @@ function palette(design: Design) {
   }
 }
 
-export function Slide({ slide, index, total, design }: Props) {
+export function Slide({ slide, index, total, design, watermark = false }: Props) {
   const c = palette(design);
   const bold = design.template === "audacieux";
   const isCover = index === 0;
@@ -127,6 +128,22 @@ export function Slide({ slide, index, total, design }: Props) {
           {isCover && total > 1 ? "Glisse →" : `${index + 1} / ${total}`}
         </div>
       </div>
+
+      {watermark && (
+        <div
+          style={{
+            position: "absolute",
+            top: 40,
+            right: 48,
+            fontSize: 24,
+            fontWeight: 600,
+            opacity: 0.6,
+            letterSpacing: 0.5,
+          }}
+        >
+          Fait avec Threadify
+        </div>
+      )}
     </div>
   );
 }

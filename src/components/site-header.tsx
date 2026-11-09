@@ -11,6 +11,9 @@ export function SiteHeader({ children }: { children?: React.ReactNode }) {
       </Link>
       <div className="flex items-center gap-3">
         {children}
+        <Link href="/tarifs" className="text-sm font-semibold text-zinc-700 hover:text-violet-700">
+          Tarifs
+        </Link>
         <Suspense fallback={<span className="h-9 w-24" aria-hidden />}>
           <AccountLink />
         </Suspense>

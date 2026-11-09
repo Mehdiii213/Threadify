@@ -8,13 +8,15 @@ import { FONTS, PALETTES, TEMPLATES, type Colors, type Design } from "@/lib/desi
 import { exportSingleSlide, exportSlidesPdf, exportSlidesZip, slugify } from "@/lib/export";
 import { SLIDE_FONTS } from "@/lib/fonts";
 
-type Props = { creationId: string; initialSlides: Slide[]; initialDesign: Design; format: "CARROUSEL_INSTAGRAM" | "CARROUSEL_LINKEDIN" };
+type Props = { creationId: string; initialSlides: Slide[]; initialDesign: Design; format: "CARROUSEL_INSTAGRAM" | "CARROUSEL_LINKEDIN";
+  watermark?: boolean;
+};
 
 const field =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200";
 const sectionTitle = "mb-3 text-sm font-semibold text-zinc-900";
 
-export function CarouselEditor({ creationId, initialSlides, initialDesign, format }: Props) {
+export function CarouselEditor({ creationId, initialSlides, initialDesign, format, watermark = false }: Props) {
   const slidesRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -298,6 +300,14 @@ export function CarouselEditor({ creationId, initialSlides, initialDesign, forma
               ? "Instagram : une image PNG par slide (1080 × 1350), numérotées dans l'ordre."
               : "LinkedIn : un document PDF, une page par slide — à ajouter avec « Ajouter un document »."}
             {dirty && " Le téléchargement reprend ce qui est affiché ; pensez à enregistrer vos modifications."}
+            {watermark && (
+              <>
+                {" "}Offre Gratuite : les images portent la mention « Fait avec Threadify ».{" "}
+                <a href="/tarifs" className="font-semibold underline">
+                  La retirer
+                </a>
+              </>
+            )}
           </p>
           {exportError && (
             <p role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -311,7 +321,7 @@ export function CarouselEditor({ creationId, initialSlides, initialDesign, forma
             key={i}
             className="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row"
           >
-            <SlideThumbnail width={260} slide={slide} index={i} total={slides.length} design={design} />
+            <SlideThumbnail width={260} slide={slide} index={i} total={slides.length} design={design} watermark={watermark} />
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-violet-700">

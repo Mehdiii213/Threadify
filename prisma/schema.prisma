@@ -4,6 +4,7 @@
 // Étape 3 : contenu généré par l'IA.
 // Étape 4 : design des carrousels.
 // Étape 6 : titres, dossiers et étiquettes.
+// Étape 7 : abonnements Stripe et compteur de générations.
 
 generator client {
   provider = "prisma-client"
@@ -19,17 +20,20 @@ datasource db {
 // champs : l'adaptateur Prisma de Better Auth s'appuie sur ces noms.
 
 model User {
-  id            String     @id
-  name          String
-  email         String     @unique
-  emailVerified Boolean    @default(false)
-  image         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  creations     Creation[]
-  folders       Folder[]
+  id               String            @id
+  name             String
+  email            String            @unique
+  emailVerified    Boolean           @default(false)
+  image            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  creations        Creation[]
+  folders          Folder[]
+  // Étape 7 : abonnement (extension Stripe de Better Auth) et compteur de générations
+  stripeCustomerId String?
+  generationEvents GenerationEvent[]
 
   @@map("user")
 }
@@ -140,4 +144,44 @@ model Folder {
 
   @@unique([userId, name])
   @@map("folder")
+}
+
+// ─── Abonnements (étape 7) ────────────────────────────────────────────────────
+// Table attendue par l'extension Stripe de Better Auth (@better-auth/stripe) :
+// ne pas renommer les champs. referenceId = id de l'utilisateur abonné.
+
+model Subscription {
+  id                   String    @id
+  plan                 String
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String?   @default("incomplete")
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAtPeriodEnd    Boolean?  @default(false)
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  seats                Int?
+  billingInterval      String?
+  stripeScheduleId     String?
+
+  @@index([referenceId])
+  @@map("subscription")
+}
+
+// Une ligne par génération réussie (génération ou régénération) : sert aux
+// quotas mensuels des offres et au garde-fou horaire de l'offre Expert.
+model GenerationEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creationId String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("generation_event")
 }

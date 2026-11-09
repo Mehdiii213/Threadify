@@ -13,7 +13,7 @@ export function proxy(request: NextRequest) {
     if (pathname === "/creer") {
       return NextResponse.redirect(new URL("/inscription", request.url));
     }
-    if (pathname.startsWith("/espace") || pathname.startsWith("/creations")) {
+    if (pathname.startsWith("/espace") || pathname.startsWith("/creations") || pathname.startsWith("/abonnement")) {
       return NextResponse.redirect(new URL("/connexion", request.url));
     }
   }
@@ -24,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/espace/:path*", "/creer", "/creations/:path*", "/connexion", "/inscription"],
+  matcher: ["/espace/:path*", "/creer", "/creations/:path*", "/abonnement", "/connexion", "/inscription"],
 };

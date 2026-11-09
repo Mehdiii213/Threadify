@@ -11,6 +11,8 @@ import { readContent } from "@/lib/content";
 import { FORMAT_LABELS, excerpt, formatDate } from "@/lib/creations";
 import { readDesign } from "@/lib/design";
 import { PAGE_SIZE, displayTitle } from "@/lib/organisation";
+import { getUsage } from "@/lib/billing";
+import { PLANS } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -75,14 +77,12 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
   const f = readFilters(sp);
   const firstName = user.name.split(" ")[0] || user.name;
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const mine = { userId: user.id };
 
-  const [total, generated, generatedThisMonth, noFolderCount, folderRows, tagRows] = await Promise.all([
+  const [total, generated, usage, noFolderCount, folderRows, tagRows] = await Promise.all([
     prisma.creation.count({ where: mine }),
     prisma.creation.count({ where: { ...mine, status: "GENERE" } }),
-    prisma.creation.count({ where: { ...mine, generatedAt: { gte: monthStart } } }),
+    getUsage(user.id),
     prisma.creation.count({ where: { ...mine, folderId: null } }),
     prisma.folder.findMany({
       where: mine,
@@ -157,19 +157,27 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
       </div>
 
       {/* Chiffres clés */}
-      <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           ["Créations", total],
           ["Générées", generated],
           ["Brouillons", total - generated],
-          ["Générées ce mois-ci", generatedThisMonth],
         ].map(([label, value]) => (
           <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <dt className="text-xs font-medium text-zinc-500">{label}</dt>
-            <dd className="mt-1 text-2xl font-bold tabular-nums">{value}</dd>
+            <p className="text-xs font-medium text-zinc-500">{label}</p>
+            <p data-stat="" className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
           </div>
         ))}
-      </dl>
+        <Link href="/abonnement" className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm hover:border-violet-400">
+          <p className="text-xs font-medium text-violet-800">
+            Générations ce mois-ci · offre {PLANS[usage.plan].label}
+          </p>
+          <p data-stat="" className="mt-1 text-2xl font-bold tabular-nums text-violet-900">
+            {usage.used}
+            <span className="text-base font-semibold text-violet-700"> / {usage.limit ?? "∞"}</span>
+          </p>
+        </Link>
+      </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[230px_1fr]">
         <aside className="self-start rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">

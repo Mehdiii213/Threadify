@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { generateCreation, type GenerateState } from "@/app/creations/[id]/actions";
 
@@ -46,6 +47,14 @@ export function GenerateButton({ creationId, regenerate }: { creationId: string;
       {state.error && !pending && (
         <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}
+          {state.upgrade && (
+            <>
+              {" "}
+              <Link href="/tarifs" className="font-semibold text-violet-700 underline">
+                Voir les offres →
+              </Link>
+            </>
+          )}
         </p>
       )}
     </form>

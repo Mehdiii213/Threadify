@@ -12,11 +12,12 @@ import {
   tweetLength,
 } from "@/lib/content";
 import { DesignSchema } from "@/lib/design";
+import { checkQuota, recordGeneration } from "@/lib/billing";
 import { GenerationError, generateContent } from "@/lib/generation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
-export type GenerateState = { error?: string };
+export type GenerateState = { error?: string; upgrade?: boolean };
 
 // Appelée via useActionState (l'état précédent, passé en 2e argument, est ignoré).
 export async function generateCreation(creationId: string): Promise<GenerateState> {
@@ -29,12 +30,17 @@ export async function generateCreation(creationId: string): Promise<GenerateStat
   });
   if (!creation) return { error: "Création introuvable." };
 
+  // Quotas de l'offre (étape 7) : vérifiés AVANT d'appeler l'IA (qui coûte).
+  const quota = await checkQuota(user.id);
+  if (!quota.ok) return { error: quota.error, upgrade: quota.upgrade };
+
   try {
     const { content, model } = await generateContent(creation);
     await prisma.creation.update({
       where: { id: creation.id },
       data: { content, model, status: "GENERE", generatedAt: new Date() },
     });
+    await recordGeneration(user.id, creation.id);
   } catch (error) {
     if (error instanceof GenerationError) return { error: error.message };
     console.error("[generateCreation]", error);

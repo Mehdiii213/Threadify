@@ -11,6 +11,8 @@ import { FORMAT_LABELS, SOURCE_LABELS, excerpt, formatDate } from "@/lib/creatio
 import { readContent } from "@/lib/content";
 import { readDesign } from "@/lib/design";
 import { displayTitle } from "@/lib/organisation";
+import { getUserPlan } from "@/lib/billing";
+import { PLANS } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -35,9 +37,10 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
   // Filtre sur userId : une création d'un autre compte renvoie une page 404.
   const creation = await prisma.creation.findFirst({ where: { id, userId: user.id } });
   if (!creation) notFound();
-  const [folders, tagRows] = await Promise.all([
+  const [folders, tagRows, plan] = await Promise.all([
     prisma.folder.findMany({ where: { userId: user.id }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.creation.findMany({ where: { userId: user.id, NOT: { tags: { isEmpty: true } } }, select: { tags: true } }),
+    getUserPlan(user.id),
   ]);
   const knownTags = [...new Set(tagRows.flatMap((r) => r.tags))].sort((a, b) => a.localeCompare(b, "fr"));
 
@@ -97,6 +100,7 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
               initialSlides={content.slides}
               initialDesign={readDesign(creation.design, user.name)}
               format={creation.format}
+              watermark={PLANS[plan].watermark}
             />
           ) : content.type === "thread" ? (
             <ThreadEditor key={creation.generatedAt?.toISOString()} creationId={creation.id} initialTweets={content.tweets} />

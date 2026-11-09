@@ -136,33 +136,25 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 2 — Écran de saisie (idée ou article collé) et choix du format — validée le 2026-11-06
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
-- [ ] Étape 5 — Export (PNG / PDF / texte) — **codée et testée par Claude (commit `7c01f09`), en attente de validation par l'utilisateur**
-- [ ] Étape 6 — Tableau de bord des créations sauvegardées
+- [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
+- [ ] Étape 6 — Tableau de bord des créations sauvegardées — **plan proposé le 2026-11-09, à valider**
 - [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-08, fin de journée)
+## Reprise — prochaine étape (point au 2026-11-09)
 
-- **Étapes 0 à 4 validées** (étape 4 validée le 2026-11-06 : « c'est nickel »). Chez l'utilisateur : `C:\2222\Threadify-main`, Supabase, clé `ANTHROPIC_API_KEY` dans son `.env` ; génération et éditeur de design testés avec succès.
-- **Étape 5 — export : plan validé le 2026-11-08 (avec les 3 dépendances), codée, testée par Claude, poussée (`7c01f09`).** L'utilisateur doit la tester avec `docs/tester-etape-5.md` (ZIP par-dessus `C:\2222`, `npm install` — pas de migration —, `npm run dev`, télécharger ZIP / PDF / slide seule / .txt, publier). **Au 2026-11-08 soir, l'utilisateur n'a encore RIEN testé de l'étape 5** (« on reprend demain ici »). À la reprise : rappeler en mots simples comment relancer le site, puis le guider pas à pas dans `docs/tester-etape-5.md` (A → H, puis publication Instagram/LinkedIn), en demandant des captures. Prévenir que le premier téléchargement peut prendre ~30 s en local. Après « validé », reporter les décisions ci-dessous dans le journal, cocher l'étape 5 et proposer le plan de l'étape 6 (tableau de bord).
+- **Étapes 0 à 5 validées** (étape 5 validée le 2026-11-09 après test chez l'utilisateur). Le parcours complet fonctionne chez lui : idée → génération Claude → design → téléchargement ZIP / PDF / .txt.
+- **Étape 6 — tableau de bord : plan proposé le 2026-11-09, PAS encore validé** — le représenter et attendre l'accord avant de coder.
 
-### Décisions et pièges de l'étape 5 (à reporter dans le journal une fois validée)
+### Plan proposé — Étape 6 : tableau de bord
 
-- Export **dans le navigateur** : `src/lib/export.ts` (`modern-screenshot` 4.7.0 `domToCanvas`, `jszip` 3.10.2, `jspdf` 4.2.1, chargés par `import()` au clic) ; chaque slide affichée porte `data-slide-root` et est capturée à 1080×1350 (`scale: 1`) après `document.fonts.ready` — polices `next/font` et dégradés `color-mix` rendus fidèlement (vérifié sur les fichiers).
-- ZIP `threadify-<titre>.zip` avec `slide-01.png`… (~1 Mo par image) ; PDF `jsPDF({ unit: "px", format: [1080, 1350], hotfixes: ["px_scaling"] })`, images JPEG 0,92 (PDF ~0,5 Mo pour 5 pages, MediaBox 810×1012,5 pt = 4:5) ; slide seule en PNG ; thread en `.txt` (tweets numérotés séparés par `---`). Noms de fichiers via `slugify()` du premier titre.
-- Bouton principal selon le format (ZIP pour Instagram, PDF pour LinkedIn), les deux toujours proposés ; l'export reprend l'état **affiché** de l'éditeur (rappel d'enregistrer si modifications en cours).
-- Piège : le **premier** export prend ~30 s en `npm run dev` (compilation à la demande des bibliothèques), sans retour visuel — ajout d'un message « Préparation du téléchargement… » immédiat ; en production (`next build` + `next start`), 0,6 s.
-- Script de préparation de l'environnement cloud « Threadify » : au démarrage de la session du 2026-11-08, PostgreSQL était **arrêté** (`.env` et dépendances présents) — démarrer avec `service postgresql start` si besoin.
-
-### Plan proposé — Étape 5 : export
-
-- **Méthode recommandée : rendu dans le navigateur de l'utilisateur** — le composant `Slide` (1080×1350) est « photographié » tel quel en PNG par la bibliothèque `modern-screenshot` (4.7.0) ; les images sont regroupées dans un ZIP avec `jszip` (3.10.2) ; le PDF LinkedIn est assemblé avec `jspdf` (4.2.1), une page de 1080×1350 par slide. **3 nouvelles dépendances à faire valider.** Avantages : rendu identique à l'aperçu (polices, dégradés), aucun coût serveur, fonctionne en local comme en ligne. Alternatives écartées : capture côté serveur avec un navigateur sans interface (lourd à installer sur Windows et à héberger) ; `next/og` / Satori (CSS limité : pas de `color-mix`, polices à fournir en fichiers, slide à réécrire).
-1. Boutons dans l'éditeur : **« Télécharger les images (ZIP) »** (`slide-01.png`, `slide-02.png`… dans `threadify-<titre>.zip`) et **« Télécharger le PDF »** ; bouton principal selon le format (ZIP pour Instagram, PDF pour LinkedIn). L'export utilise l'état **affiché** de l'éditeur (ce qu'on voit = ce qu'on télécharge), avec un rappel s'il reste des modifications non enregistrées.
-2. Bouton ⬇ sur chaque miniature pour télécharger **une seule slide** (pratique sur téléphone).
-3. Thread X : bouton **« Télécharger en .txt »** en plus de « Copier tout le thread ».
-4. Indicateur de progression (« Préparation de l'image 3/8… »), messages d'erreur en français.
-5. Vérification par Claude : téléchargement automatisé, ZIP ouvert, chaque PNG mesuré (1080×1350) et montré à l'utilisateur, nombre de pages du PDF ; guide `docs/tester-etape-5.md` (avec la publication sur Instagram : téléphone « + » → Publication → sélection multiple dans l'ordre, ou instagram.com → Créer ; LinkedIn : « Commencer un post » → « Ajouter un document »).
-- Ensuite : étape 6 (tableau de bord), puis **étape 7 (abonnement Stripe)** et **étape 8 (mise en ligne)** — ajoutées le 2026-11-06 à la demande de l'utilisateur (question posée « sans accélérer »).
+Aucune nouvelle dépendance, **aucune modification de la base** (pas de migration).
+1. `/espace` devient un vrai tableau de bord : en-tête « Bonjour {prénom} » + **chiffres clés** (créations au total, générées, brouillons, générations ce mois-ci — préparation des quotas de l'étape 7) + bouton « + Nouvelle création ».
+2. **Grille de cartes** : miniature de la **couverture** avec son design pour les carrousels (`SlideThumbnail`), premier tweet pour les threads, extrait du texte pour les brouillons ; format, étiquette Générée/Brouillon, date. Clic → `/creations/[id]`.
+3. **Filtres** par format (Tous / Instagram / LinkedIn / Threads X) et par statut (Tous / Générées / Brouillons), **recherche** dans les textes ; tri du plus récent au plus ancien ; **pagination** (12 par page). Filtres dans l'adresse (`?format=…&statut=…&q=…&page=…`), lus côté serveur sous `<Suspense>`.
+4. **Actions** sur chaque carte (menu « … ») : **Dupliquer** (copie texte + design, « (copie) »), **Supprimer** (confirmation) — Server Actions avec session + propriétaire vérifiés.
+5. État vide soigné (« Aucune création… Lancez-vous ! ») et message quand un filtre ne donne rien.
+6. Vérification par captures (grille, filtres, recherche, duplication, suppression, compte vide) ; guide `docs/tester-etape-6.md` ; mise à jour de ce fichier après validation.
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
@@ -222,6 +214,11 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-06 — Interface au vouvoiement, contenus des slides au tutoiement (« Glisse → », « Ton texte ici. »).
 - 2026-11-06 — Feuille de route complétée : étape 7 abonnement mensuel (après le MVP complet : on fait payer un produit qui permet d'exporter), étape 8 mise en ligne. Côté utilisateur à préparer : statut d'entreprise (SIRET) et compte bancaire pour Stripe, choix des offres et prix, documents légaux.
 
+- 2026-11-08 — Export **dans le navigateur** : `src/lib/export.ts` (`modern-screenshot` 4.7.0 `domToCanvas`, `jszip` 3.10.2, `jspdf` 4.2.1, chargés par `import()` au clic) ; chaque slide affichée porte `data-slide-root` et est capturée à 1080×1350 (`scale: 1`) après `document.fonts.ready` — polices `next/font` et dégradés `color-mix` rendus fidèlement (vérifié sur les fichiers).
+- 2026-11-08 — ZIP `threadify-<titre>.zip` avec `slide-01.png`… (~1 Mo par image) ; PDF `jsPDF({ unit: "px", format: [1080, 1350], hotfixes: ["px_scaling"] })`, images JPEG 0,92 (PDF ~0,5 Mo pour 5 pages, MediaBox 810×1012,5 pt = 4:5) ; slide seule en PNG ; thread en `.txt` (tweets numérotés séparés par `---`). Noms de fichiers via `slugify()` du premier titre.
+- 2026-11-08 — Bouton principal selon le format (ZIP pour Instagram, PDF pour LinkedIn), les deux toujours proposés ; l'export reprend l'état **affiché** de l'éditeur (rappel d'enregistrer si modifications en cours).
+- 2026-11-09 — Étape 5 validée par l'utilisateur après test chez lui (ZIP / PDF / .txt).
+
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
@@ -253,8 +250,10 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 - Piège de test : `getByLabel('Tweet 2')` attrape aussi les boutons « Monter le tweet 2 » — utiliser `getByRole('textbox', { name: 'Tweet 2', exact: true })`.
 
+- Piège : le **premier** export prend ~30 s en `npm run dev` (compilation à la demande des bibliothèques), sans retour visuel — ajout d'un message « Préparation du téléchargement… » immédiat ; en production (`next build` + `next start`), 0,6 s.
+- Script de préparation de l'environnement cloud « Threadify » : au démarrage de la session du 2026-11-08, PostgreSQL était **arrêté** (`.env` et dépendances présents) — démarrer avec `service postgresql start` si besoin.
+
 ## Questions ouvertes
 
-- Méthode d'export des carrousels (rendu côté serveur ou côté client) — à décider à l'étape 5 ; l'étape 4 prépare un composant `Slide` 1080×1350 réutilisable.
 - Import d'article par URL (scraping) dans le MVP ou plus tard ?
 - Modèle de monétisation : détaillé à l'étape 7 (offres, prix, quotas) — à décider avec l'utilisateur.

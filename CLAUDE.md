@@ -142,13 +142,13 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
 - [x] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — validée le 2026-11-09 — **MVP complet**
-- [ ] Étape 7 — **plan proposé le 2026-11-09, à valider** — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
+- [ ] Étape 7 — **en cours** (Gratuit 3/mois + filigrane, Pro 12 € 100/mois, Expert 19 € illimité) — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
 ## Reprise — prochaine étape (point au 2026-11-09)
 
 - **Étapes 0 à 6 validées — le MVP est complet** (étape 6 validée le 2026-11-09).
-- **Étape 7 — abonnement : plan proposé le 2026-11-09, PAS encore validé.** Attendre l'accord sur : (1) les offres, prix et limites ; (2) le filigrane éventuel sur l'offre gratuite ; (3) les 2 dépendances ; (4) la création d'un compte Stripe en **mode test** par l'utilisateur.
+- **Étape 7 — abonnement : plan validé le 2026-11-09 avec 3 offres** (choix de l'utilisateur) : **Gratuit** 3 générations/mois avec filigrane « Fait avec Threadify » sur les exports ; **Pro** 12 €/mois, 100 générations/mois ; **Expert** 19 €/mois, générations **illimitées** (garde-fou anti-abus proposé : 30 générations/heure max, à retirer si l'utilisateur le demande). Dépendances `stripe` + `@better-auth/stripe` acceptées ; l'utilisateur crée un compte Stripe en mode test. **En cours de développement.**
 
 ### Plan proposé — Étape 7 : abonnement mensuel
 

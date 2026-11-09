@@ -141,33 +141,23 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
-- [ ] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — **codée et testée par Claude (commit `3c8db29`), en attente de validation par l'utilisateur**
-- [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
+- [x] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — validée le 2026-11-09 — **MVP complet**
+- [ ] Étape 7 — **plan proposé le 2026-11-09, à valider** — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
 ## Reprise — prochaine étape (point au 2026-11-09)
 
-- **Étapes 0 à 5 validées** (étape 5 validée le 2026-11-09 après test chez l'utilisateur). Le parcours complet fonctionne chez lui : idée → génération Claude → design → téléchargement ZIP / PDF / .txt.
-- **Étape 6 — tableau de bord : plan validé le 2026-11-09 avec 2 ajouts de l'utilisateur (titre modifiable ; dossiers + étiquettes), codée, testée par Claude, poussée (`3c8db29`).** L'utilisateur doit la tester avec `docs/tester-etape-6.md` (ZIP par-dessus `C:\2222`, `npm install`, **`npx prisma migrate deploy`** — migration `organisation` —, `npm run dev`). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal, cocher l'étape 6 et proposer le plan de l'étape 7 (abonnement Stripe — dépendance hors stack à faire valider).
+- **Étapes 0 à 6 validées — le MVP est complet** (étape 6 validée le 2026-11-09).
+- **Étape 7 — abonnement : plan proposé le 2026-11-09, PAS encore validé.** Attendre l'accord sur : (1) les offres, prix et limites ; (2) le filigrane éventuel sur l'offre gratuite ; (3) les 2 dépendances ; (4) la création d'un compte Stripe en **mode test** par l'utilisateur.
 
-### Décisions et pièges de l'étape 6 (à reporter dans le journal une fois validée)
+### Plan proposé — Étape 7 : abonnement mensuel
 
-- Migration `20261109101118_organisation` : `Creation.title String?` (titre choisi ; sinon `displayTitle()` le déduit : 1re slide, 1er tweet ou extrait du texte), `Creation.folderId` → modèle `Folder` (`@@unique([userId, name])`, `onDelete: SetNull` : supprimer un dossier garde ses créations), `Creation.tags String[]` (≤ 10 étiquettes de ≤ 30 caractères, dédoublonnées sans tenir compte des majuscules, « # » retiré — `normalizeTags()`), index `[userId, folderId]`. Choix : **dossier = un seul par création (client)**, **étiquettes = plusieurs (thèmes)**.
-- `src/lib/organisation.ts` (partagé) : limites (titre 80, dossier 40, 50 dossiers, 12 par page), `displayTitle`, `normalizeTags`. `src/app/espace/actions.ts` : `renameCreation`, `moveCreation`, `setCreationTags`, `duplicateCreation` (copie texte + design + dossier + étiquettes, titre « … (copie) »), `deleteCreation`, `createFolder`, `renameFolder`, `deleteFolder` — session + propriétaire vérifiés, `refresh()` après succès.
-- `/espace` : filtres dans l'adresse (`?dossier=<id>|aucun&format=instagram|linkedin|thread&statut=generee|brouillon&etiquette=…&q=…&page=…`), lus sous `<Suspense>` ; recherche insensible à la casse dans le titre et le texte de départ (pas dans le contenu généré, stocké en JSON) ; « Générées ce mois-ci » = créations dont `generatedAt` ≥ 1er du mois (une régénération ne compte pas en plus — un vrai compteur sera nécessaire pour les quotas de l'étape 7).
-- Composants : `dashboard/card-menu.tsx` (menu `<details>` « ⋯ », `window.prompt` / `window.confirm`), `dashboard/folder-nav.tsx`, `organisation-panel.tsx` (titre enregistré à la sortie du champ, dossier à la sélection, étiquettes avec suggestions `<datalist>`). Le titre de la page d'une création est désormais le titre affiché (format en sous-titre).
-- Piège corrigé : le menu « ⋯ » restait ouvert après « Annuler » dans une confirmation — il se referme dès qu'une action est choisie.
-- Piège de test : `dialog.accept(true)` lève une erreur (`promptText` doit être une chaîne) — n'envoyer un texte qu'aux `prompt`.
-
-### Plan proposé — Étape 6 : tableau de bord
-
-Aucune nouvelle dépendance. **Ajouts validés le 2026-11-09 (migration `organisation`)** : `Creation.title` (renommer), modèle `Folder` (un dossier par création, ex. par client ; supprimer un dossier garde ses créations), `Creation.tags String[]` (plusieurs étiquettes, ex. par thème) ; filtres par dossier et par étiquette ; édition titre / dossier / étiquettes sur la page d'une création et depuis les cartes.
-1. `/espace` devient un vrai tableau de bord : en-tête « Bonjour {prénom} » + **chiffres clés** (créations au total, générées, brouillons, générations ce mois-ci — préparation des quotas de l'étape 7) + bouton « + Nouvelle création ».
-2. **Grille de cartes** : miniature de la **couverture** avec son design pour les carrousels (`SlideThumbnail`), premier tweet pour les threads, extrait du texte pour les brouillons ; format, étiquette Générée/Brouillon, date. Clic → `/creations/[id]`.
-3. **Filtres** par format (Tous / Instagram / LinkedIn / Threads X) et par statut (Tous / Générées / Brouillons), **recherche** dans les textes ; tri du plus récent au plus ancien ; **pagination** (12 par page). Filtres dans l'adresse (`?format=…&statut=…&q=…&page=…`), lus côté serveur sous `<Suspense>`.
-4. **Actions** sur chaque carte (menu « … ») : **Dupliquer** (copie texte + design, « (copie) »), **Supprimer** (confirmation) — Server Actions avec session + propriétaire vérifiés.
-5. État vide soigné (« Aucune création… Lancez-vous ! ») et message quand un filtre ne donne rien.
-6. Vérification par captures (grille, filtres, recherche, duplication, suppression, compte vide) ; guide `docs/tester-etape-6.md` ; mise à jour de ce fichier après validation.
+- **Dépendances (hors stack, à valider)** : `stripe` 23.1.0 (SDK officiel) + `@better-auth/stripe` 1.7.18 (extension officielle de Better Auth, même version que `better-auth`) : client Stripe créé à l'inscription, paiement Stripe Checkout, portail client Stripe (carte, factures, résiliation), webhooks, table d'abonnements (migration).
+- **Offres proposées** (à faire choisir) : **Gratuit** = 3 générations / mois, tous les modèles ; **Pro** = 12 €/mois (TTC), 100 générations / mois (usage raisonnable). Option : petit filigrane « Fait avec Threadify » sur les exports de l'offre gratuite.
+- **Quotas** : vrai compteur de générations (chaque génération ou régénération compte ; table dédiée), remis à zéro chaque mois ; blocage avec message clair et lien « Passer à Pro » quand la limite est atteinte ; affichage « 2 / 3 générations ce mois-ci » dans l'espace.
+- **Pages** : `/tarifs` (publique, comparatif des offres), `/abonnement` (offre actuelle, utilisation du mois, bouton « Passer à Pro » → paiement Stripe, « Gérer mon abonnement » → portail Stripe) ; lien « Tarifs » dans l'en-tête.
+- **Développement en mode test Stripe** : aucun vrai paiement, cartes de test (4242 4242 4242 4242) ; **pas besoin de SIRET à ce stade** (activation du compte Stripe réel à l'étape 8). Clés `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, identifiant du prix Pro dans `.env`. Chez l'utilisateur (Windows), réception des webhooks en local via la **Stripe CLI** (`stripe listen --forward-to localhost:3000/api/auth/stripe/webhook`) — à détailler dans le guide. Dans l'environnement cloud, demander l'accès réseau à `api.stripe.com` et la clé de test via `request_credential`.
+- Vérification par captures (tarifs, paiement test, abonnement actif, quota atteint, portail) ; guide `docs/tester-etape-7.md` ultra détaillé (compte Stripe test, clés, produit « Pro », Stripe CLI).
 
 **Poste de l'utilisateur** : Windows 10, terminal `cmd`, Node.js **v26.13.0** / npm **11.20**, projet téléchargé en ZIP (pas de Git), dossier actuel **`C:\2222\Threadify-main`** (hors OneDrive ; les prochains ZIP sont à décompresser **par-dessus**, destination `C:\2222`, pour conserver le `.env`) ; base Supabase via l'adresse « Session pooler ». Débutant complet : voir règle de travail n° 4.
 
@@ -232,6 +222,12 @@ Aucune nouvelle dépendance. **Ajouts validés le 2026-11-09 (migration `organis
 - 2026-11-08 — Bouton principal selon le format (ZIP pour Instagram, PDF pour LinkedIn), les deux toujours proposés ; l'export reprend l'état **affiché** de l'éditeur (rappel d'enregistrer si modifications en cours).
 - 2026-11-09 — Étape 5 validée par l'utilisateur après test chez lui (ZIP / PDF / .txt).
 
+- 2026-11-09 — Migration `20261109101118_organisation` : `Creation.title String?` (titre choisi ; sinon `displayTitle()` le déduit : 1re slide, 1er tweet ou extrait du texte), `Creation.folderId` → modèle `Folder` (`@@unique([userId, name])`, `onDelete: SetNull` : supprimer un dossier garde ses créations), `Creation.tags String[]` (≤ 10 étiquettes de ≤ 30 caractères, dédoublonnées sans tenir compte des majuscules, « # » retiré — `normalizeTags()`), index `[userId, folderId]`. Choix : **dossier = un seul par création (client)**, **étiquettes = plusieurs (thèmes)**.
+- 2026-11-09 — `src/lib/organisation.ts` (partagé) : limites (titre 80, dossier 40, 50 dossiers, 12 par page), `displayTitle`, `normalizeTags`. `src/app/espace/actions.ts` : `renameCreation`, `moveCreation`, `setCreationTags`, `duplicateCreation` (copie texte + design + dossier + étiquettes, titre « … (copie) »), `deleteCreation`, `createFolder`, `renameFolder`, `deleteFolder` — session + propriétaire vérifiés, `refresh()` après succès.
+- 2026-11-09 — `/espace` : filtres dans l'adresse (`?dossier=<id>|aucun&format=instagram|linkedin|thread&statut=generee|brouillon&etiquette=…&q=…&page=…`), lus sous `<Suspense>` ; recherche insensible à la casse dans le titre et le texte de départ (pas dans le contenu généré, stocké en JSON) ; « Générées ce mois-ci » = créations dont `generatedAt` ≥ 1er du mois (une régénération ne compte pas en plus — un vrai compteur sera nécessaire pour les quotas de l'étape 7).
+- 2026-11-09 — Composants : `dashboard/card-menu.tsx` (menu `<details>` « ⋯ », `window.prompt` / `window.confirm`), `dashboard/folder-nav.tsx`, `organisation-panel.tsx` (titre enregistré à la sortie du champ, dossier à la sélection, étiquettes avec suggestions `<datalist>`). Le titre de la page d'une création est désormais le titre affiché (format en sous-titre).
+- 2026-11-09 — Étape 6 validée par l'utilisateur : le MVP (parcours 1 à 7 du produit) est complet.
+
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
@@ -265,6 +261,9 @@ Aucune nouvelle dépendance. **Ajouts validés le 2026-11-09 (migration `organis
 
 - Piège : le **premier** export prend ~30 s en `npm run dev` (compilation à la demande des bibliothèques), sans retour visuel — ajout d'un message « Préparation du téléchargement… » immédiat ; en production (`next build` + `next start`), 0,6 s.
 - Script de préparation de l'environnement cloud « Threadify » : au démarrage de la session du 2026-11-08, PostgreSQL était **arrêté** (`.env` et dépendances présents) — démarrer avec `service postgresql start` si besoin.
+
+- Piège corrigé : le menu « ⋯ » restait ouvert après « Annuler » dans une confirmation — il se referme dès qu'une action est choisie.
+- Piège de test : `dialog.accept(true)` lève une erreur (`promptText` doit être une chaîne) — n'envoyer un texte qu'aux `prompt`.
 
 ## Questions ouvertes
 

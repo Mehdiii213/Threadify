@@ -13,6 +13,8 @@ export const PLANS: Record<
 
 /** Garde-fou anti-abus de l'offre Expert (« illimité ») : générations max par heure. */
 export const EXPERT_HOURLY_LIMIT = 30;
+/** Plafond d'usage raisonnable de l'offre Expert : générations max par jour (choix du 2026-11-09). */
+export const EXPERT_DAILY_LIMIT = 100;
 
 export const PAID_PLANS = ["pro", "expert"] as const;
 

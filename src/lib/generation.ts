@@ -96,6 +96,43 @@ function frenchError(error: unknown): GenerationError {
   return new GenerationError("Une erreur inattendue est survenue pendant la génération. Réessayez.");
 }
 
+// ─── Coût des appels (suivi administrateur) ───────────────────────────────────
+
+// Tarifs publics Anthropic en $ par million de tokens (entrée, sortie).
+// À mettre à jour si les prix changent. Le modèle de repli éventuel (fallback)
+// est facturé à son propre tarif : on lit le modèle réellement utilisé.
+const PRICES_PER_MTOK: Record<string, { input: number; output: number }> = {
+  "claude-opus-5-5": { input: 4, output: 20 },
+  "claude-opus-5": { input: 5, output: 25 },
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-sonnet-5-5": { input: 2, output: 10 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
+};
+
+export type GenerationUsage = { model: string; inputTokens: number; outputTokens: number; costUsd: number };
+
+function usageOf(response: { model: string; usage: Anthropic.Beta.BetaUsage }): GenerationUsage {
+  const price = PRICES_PER_MTOK[response.model] ?? PRICES_PER_MTOK[AI_MODEL];
+  const u = response.usage;
+  const cacheWrite = u.cache_creation_input_tokens ?? 0;
+  const cacheRead = u.cache_read_input_tokens ?? 0;
+  const inputTokens = u.input_tokens + cacheWrite + cacheRead;
+  // Écriture en cache : 1,25 × le prix d'entrée ; lecture : 0,1 ×. La réflexion est comprise dans output_tokens.
+  const costUsd =
+    (u.input_tokens * price.input + cacheWrite * price.input * 1.25 + cacheRead * price.input * 0.1 + u.output_tokens * price.output) /
+    1_000_000;
+  return { model: response.model, inputTokens, outputTokens: u.output_tokens, costUsd };
+}
+
+function addUsage(a: GenerationUsage, b: GenerationUsage): GenerationUsage {
+  return {
+    model: b.model,
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    costUsd: a.costUsd + b.costUsd,
+  };
+}
+
 // ─── Génération ───────────────────────────────────────────────────────────────
 
 let client: Anthropic | null = null;
@@ -110,7 +147,7 @@ function getClient() {
 }
 
 /** Appelle Claude et renvoie un JSON validé par le schéma donné. */
-async function ask<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<{ data: T; model: string }> {
+async function ask<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<{ data: T; model: string; usage: GenerationUsage }> {
   const response = await getClient().beta.messages.parse({
     model: AI_MODEL,
     max_tokens: 16000,
@@ -129,20 +166,21 @@ async function ask<T>(schema: z.ZodType<T>, system: string, prompt: string): Pro
   if (response.stop_reason === "max_tokens" || !response.parsed_output) {
     throw new GenerationError("La réponse de l'IA était incomplète. Réessayez.");
   }
-  return { data: response.parsed_output as T, model: response.model };
+  return { data: response.parsed_output as T, model: response.model, usage: usageOf(response) };
 }
 
 export async function generateContent(input: {
   sourceType: SourceType;
   sourceText: string;
   format: CreationFormat;
-}): Promise<{ content: GeneratedContent; model: string }> {
+}): Promise<{ content: GeneratedContent; model: string; usage: GenerationUsage }> {
   const system = `${COMMON_RULES}\n\n${FORMAT_RULES[input.format]}`;
   const prompt = buildPrompt(input.sourceType, input.sourceText);
 
   try {
     if (input.format === "THREAD_X") {
       let result = await ask(ThreadSchema, system, prompt);
+      let usage = result.usage;
       let tooLong = result.data.tweets.filter((t) => tweetLength(t) > TWEET_MAX);
       // Un tweet trop long : on redemande une fois en signalant le problème.
       if (tooLong.length > 0) {
@@ -152,6 +190,7 @@ export async function generateContent(input: {
           `${prompt}\n\nAttention : dans un premier essai, ${tooLong.length} tweet(s) dépassaient ${TWEET_MAX} caractères. Raccourcis chaque tweet sous 240 caractères.`,
         );
         tooLong = result.data.tweets.filter((t) => tweetLength(t) > TWEET_MAX);
+        usage = addUsage(usage, result.usage); // les deux appels sont facturés
       }
       // Dernier filet de sécurité : couper proprement ce qui dépasse encore.
       const tweets = result.data.tweets
@@ -159,7 +198,7 @@ export async function generateContent(input: {
         .filter(Boolean)
         .map((t) => (tweetLength(t) > TWEET_MAX ? `${[...t].slice(0, TWEET_MAX - 1).join("").trimEnd()}…` : t));
       if (tweets.length === 0) throw new GenerationError("L'IA n'a renvoyé aucun tweet. Réessayez.");
-      return { content: { type: "thread", tweets }, model: result.model };
+      return { content: { type: "thread", tweets }, model: result.model, usage };
     }
 
     const result = await ask(CarrouselSchema, system, prompt);
@@ -167,7 +206,7 @@ export async function generateContent(input: {
       .map((s) => ({ titre: s.titre.trim(), texte: s.texte.trim() }))
       .filter((s) => s.titre || s.texte);
     if (slides.length === 0) throw new GenerationError("L'IA n'a renvoyé aucune slide. Réessayez.");
-    return { content: { type: "carrousel", slides }, model: result.model };
+    return { content: { type: "carrousel", slides }, model: result.model, usage: result.usage };
   } catch (error) {
     throw frenchError(error);
   }

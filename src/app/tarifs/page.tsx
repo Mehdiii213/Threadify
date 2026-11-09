@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PlanCards } from "@/components/plan-cards";
 import { SiteHeader } from "@/components/site-header";
 import { billingEnabled, getUserPlan } from "@/lib/billing";
-import { EXPERT_HOURLY_LIMIT } from "@/lib/plans";
+import { EXPERT_DAILY_LIMIT, EXPERT_HOURLY_LIMIT } from "@/lib/plans";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Tarifs — Threadify" };
@@ -25,7 +25,7 @@ export default function TarifsPage() {
           </Suspense>
         </div>
         <p className="mt-8 text-center text-xs text-zinc-500">
-          Prix TTC, prélevés chaque mois. * Usage raisonnable : {EXPERT_HOURLY_LIMIT} générations par heure au maximum.
+          Prix TTC, prélevés chaque mois. * Usage raisonnable : {EXPERT_DAILY_LIMIT} générations par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum.
           Paiement sécurisé par Stripe.
         </p>
       </section>

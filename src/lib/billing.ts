@@ -1,5 +1,5 @@
 import "server-only";
-import { EXPERT_HOURLY_LIMIT, PLANS, isPlanId, type PlanId } from "@/lib/plans";
+import { EXPERT_DAILY_LIMIT, EXPERT_HOURLY_LIMIT, PLANS, isPlanId, type PlanId } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { stripeClient } from "@/lib/stripe";
 
@@ -55,6 +55,16 @@ export async function checkQuota(userId: string): Promise<{ ok: true } | { ok: f
     const lastHour = await prisma.generationEvent.count({
       where: { userId, createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } },
     });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastDay = await prisma.generationEvent.count({ where: { userId, createdAt: { gte: today } } });
+    if (lastDay >= EXPERT_DAILY_LIMIT) {
+      return {
+        ok: false,
+        upgrade: false,
+        error: `Vous avez atteint la limite d'usage raisonnable de ${EXPERT_DAILY_LIMIT} générations aujourd'hui. Elle sera remise à zéro demain.`,
+      };
+    }
     if (lastHour >= EXPERT_HOURLY_LIMIT) {
       return {
         ok: false,
@@ -66,8 +76,12 @@ export async function checkQuota(userId: string): Promise<{ ok: true } | { ok: f
   return { ok: true };
 }
 
-export async function recordGeneration(userId: string, creationId: string) {
-  await prisma.generationEvent.create({ data: { userId, creationId } });
+export async function recordGeneration(
+  userId: string,
+  creationId: string,
+  usage?: { model: string; inputTokens: number; outputTokens: number; costUsd: number },
+) {
+  await prisma.generationEvent.create({ data: { userId, creationId, ...usage } });
 }
 
 /**

@@ -35,12 +35,12 @@ export async function generateCreation(creationId: string): Promise<GenerateStat
   if (!quota.ok) return { error: quota.error, upgrade: quota.upgrade };
 
   try {
-    const { content, model } = await generateContent(creation);
+    const { content, model, usage } = await generateContent(creation);
     await prisma.creation.update({
       where: { id: creation.id },
       data: { content, model, status: "GENERE", generatedAt: new Date() },
     });
-    await recordGeneration(user.id, creation.id);
+    await recordGeneration(user.id, creation.id, usage);
   } catch (error) {
     if (error instanceof GenerationError) return { error: error.message };
     console.error("[generateCreation]", error);

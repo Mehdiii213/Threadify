@@ -176,12 +176,18 @@ model Subscription {
 // Une ligne par génération réussie (génération ou régénération) : sert aux
 // quotas mensuels des offres et au garde-fou horaire de l'offre Expert.
 model GenerationEvent {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creationId String?
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creationId   String?
+  createdAt    DateTime @default(now())
+  // Coût réel de la génération (suivi réservé à l'administrateur, page /admin/couts)
+  model        String?
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  costUsd      Float    @default(0)
 
   @@index([userId, createdAt])
+  @@index([createdAt])
   @@map("generation_event")
 }

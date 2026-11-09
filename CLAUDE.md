@@ -91,7 +91,11 @@ src/components/slide.tsx    # slide 1080×1350 + miniature (réutilisée pour l'
 src/components/carousel-editor.tsx, thread-editor.tsx  # éditeurs (client)
 src/app/creations/[id]/actions.ts  # Server Action generateCreation
 src/lib/export.ts           # export navigateur : PNG (modern-screenshot), ZIP (jszip), PDF (jspdf), .txt
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2/3/4/5)
+src/lib/organisation.ts     # titres affichés, étiquettes, limites (dossiers, pages)
+src/app/espace/actions.ts   # actions du tableau de bord (dossiers, étiquettes, dupliquer, supprimer…)
+src/components/dashboard/   # menu de carte, navigation des dossiers
+src/components/organisation-panel.tsx  # titre / dossier / étiquettes d'une création
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 6)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -137,14 +141,23 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
-- [ ] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — **en cours**
+- [ ] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — **codée et testée par Claude (commit `3c8db29`), en attente de validation par l'utilisateur**
 - [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
 ## Reprise — prochaine étape (point au 2026-11-09)
 
 - **Étapes 0 à 5 validées** (étape 5 validée le 2026-11-09 après test chez l'utilisateur). Le parcours complet fonctionne chez lui : idée → génération Claude → design → téléchargement ZIP / PDF / .txt.
-- **Étape 6 — tableau de bord : plan validé le 2026-11-09, avec 2 ajouts demandés par l'utilisateur : titre modifiable + dossiers et étiquettes.** En cours de développement.
+- **Étape 6 — tableau de bord : plan validé le 2026-11-09 avec 2 ajouts de l'utilisateur (titre modifiable ; dossiers + étiquettes), codée, testée par Claude, poussée (`3c8db29`).** L'utilisateur doit la tester avec `docs/tester-etape-6.md` (ZIP par-dessus `C:\2222`, `npm install`, **`npx prisma migrate deploy`** — migration `organisation` —, `npm run dev`). À la reprise : demander le résultat ; après « validé », reporter les décisions ci-dessous dans le journal, cocher l'étape 6 et proposer le plan de l'étape 7 (abonnement Stripe — dépendance hors stack à faire valider).
+
+### Décisions et pièges de l'étape 6 (à reporter dans le journal une fois validée)
+
+- Migration `20261109101118_organisation` : `Creation.title String?` (titre choisi ; sinon `displayTitle()` le déduit : 1re slide, 1er tweet ou extrait du texte), `Creation.folderId` → modèle `Folder` (`@@unique([userId, name])`, `onDelete: SetNull` : supprimer un dossier garde ses créations), `Creation.tags String[]` (≤ 10 étiquettes de ≤ 30 caractères, dédoublonnées sans tenir compte des majuscules, « # » retiré — `normalizeTags()`), index `[userId, folderId]`. Choix : **dossier = un seul par création (client)**, **étiquettes = plusieurs (thèmes)**.
+- `src/lib/organisation.ts` (partagé) : limites (titre 80, dossier 40, 50 dossiers, 12 par page), `displayTitle`, `normalizeTags`. `src/app/espace/actions.ts` : `renameCreation`, `moveCreation`, `setCreationTags`, `duplicateCreation` (copie texte + design + dossier + étiquettes, titre « … (copie) »), `deleteCreation`, `createFolder`, `renameFolder`, `deleteFolder` — session + propriétaire vérifiés, `refresh()` après succès.
+- `/espace` : filtres dans l'adresse (`?dossier=<id>|aucun&format=instagram|linkedin|thread&statut=generee|brouillon&etiquette=…&q=…&page=…`), lus sous `<Suspense>` ; recherche insensible à la casse dans le titre et le texte de départ (pas dans le contenu généré, stocké en JSON) ; « Générées ce mois-ci » = créations dont `generatedAt` ≥ 1er du mois (une régénération ne compte pas en plus — un vrai compteur sera nécessaire pour les quotas de l'étape 7).
+- Composants : `dashboard/card-menu.tsx` (menu `<details>` « ⋯ », `window.prompt` / `window.confirm`), `dashboard/folder-nav.tsx`, `organisation-panel.tsx` (titre enregistré à la sortie du champ, dossier à la sélection, étiquettes avec suggestions `<datalist>`). Le titre de la page d'une création est désormais le titre affiché (format en sous-titre).
+- Piège corrigé : le menu « ⋯ » restait ouvert après « Annuler » dans une confirmation — il se referme dès qu'une action est choisie.
+- Piège de test : `dialog.accept(true)` lève une erreur (`promptText` doit être une chaîne) — n'envoyer un texte qu'aux `prompt`.
 
 ### Plan proposé — Étape 6 : tableau de bord
 

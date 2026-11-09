@@ -3,6 +3,7 @@
 // Étape 2 : créations (idée ou article + format choisi).
 // Étape 3 : contenu généré par l'IA.
 // Étape 4 : design des carrousels.
+// Étape 6 : titres, dossiers et étiquettes.
 
 generator client {
   provider = "prisma-client"
@@ -28,6 +29,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   creations     Creation[]
+  folders       Folder[]
 
   @@map("user")
 }
@@ -113,9 +115,29 @@ model Creation {
   // Réglages de design du carrousel (modèle, couleurs, police, signature)
   // — voir src/lib/design.ts
   design      Json?
+  // Étape 6 : organisation
+  title       String? // titre choisi par l'utilisateur (sinon titre déduit du contenu)
+  folderId    String?
+  folder      Folder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags        String[]       @default([])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
   @@index([userId, createdAt])
+  @@index([userId, folderId])
   @@map("creation")
+}
+
+// Dossiers de l'utilisateur (ex. un dossier par client). Supprimer un dossier
+// ne supprime pas ses créations : elles passent « sans dossier ».
+model Folder {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime   @default(now())
+  creations Creation[]
+
+  @@unique([userId, name])
+  @@map("folder")
 }

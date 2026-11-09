@@ -137,18 +137,18 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 3 — Génération IA du contenu (slides / tweets) — validée le 2026-11-06
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
-- [ ] Étape 6 — Tableau de bord des créations sauvegardées — **plan proposé le 2026-11-09, à valider**
+- [ ] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — **en cours**
 - [ ] Étape 7 — Abonnement mensuel (Stripe — hors stack imposée, à faire valider ; Better Auth propose une intégration Stripe) : offres (ex. Gratuit 3 générations/mois, Pro ~9–19 €/mois), limites de générations par offre (chaque génération coûte quelques centimes), page « Tarifs », écran « Mon abonnement »
 - [ ] Étape 8 — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
 ## Reprise — prochaine étape (point au 2026-11-09)
 
 - **Étapes 0 à 5 validées** (étape 5 validée le 2026-11-09 après test chez l'utilisateur). Le parcours complet fonctionne chez lui : idée → génération Claude → design → téléchargement ZIP / PDF / .txt.
-- **Étape 6 — tableau de bord : plan proposé le 2026-11-09, PAS encore validé** — le représenter et attendre l'accord avant de coder.
+- **Étape 6 — tableau de bord : plan validé le 2026-11-09, avec 2 ajouts demandés par l'utilisateur : titre modifiable + dossiers et étiquettes.** En cours de développement.
 
 ### Plan proposé — Étape 6 : tableau de bord
 
-Aucune nouvelle dépendance, **aucune modification de la base** (pas de migration).
+Aucune nouvelle dépendance. **Ajouts validés le 2026-11-09 (migration `organisation`)** : `Creation.title` (renommer), modèle `Folder` (un dossier par création, ex. par client ; supprimer un dossier garde ses créations), `Creation.tags String[]` (plusieurs étiquettes, ex. par thème) ; filtres par dossier et par étiquette ; édition titre / dossier / étiquettes sur la page d'une création et depuis les cartes.
 1. `/espace` devient un vrai tableau de bord : en-tête « Bonjour {prénom} » + **chiffres clés** (créations au total, générées, brouillons, générations ce mois-ci — préparation des quotas de l'étape 7) + bouton « + Nouvelle création ».
 2. **Grille de cartes** : miniature de la **couverture** avec son design pour les carrousels (`SlideThumbnail`), premier tweet pour les threads, extrait du texte pour les brouillons ; format, étiquette Générée/Brouillon, date. Clic → `/creations/[id]`.
 3. **Filtres** par format (Tous / Instagram / LinkedIn / Threads X) et par statut (Tous / Générées / Brouillons), **recherche** dans les textes ; tri du plus récent au plus ancien ; **pagination** (12 par page). Filtres dans l'adresse (`?format=…&statut=…&q=…&page=…`), lus côté serveur sous `<Suspense>`.

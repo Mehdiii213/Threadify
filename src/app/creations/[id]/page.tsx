@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { GenerateButton } from "@/components/generate-button";
+import { OrganisationPanel } from "@/components/organisation-panel";
 import { CarouselEditor } from "@/components/carousel-editor";
 import { ThreadEditor } from "@/components/thread-editor";
 import { SiteHeader } from "@/components/site-header";
 import { FORMAT_LABELS, SOURCE_LABELS, excerpt, formatDate } from "@/lib/creations";
 import { readContent } from "@/lib/content";
 import { readDesign } from "@/lib/design";
+import { displayTitle } from "@/lib/organisation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
@@ -33,6 +35,11 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
   // Filtre sur userId : une création d'un autre compte renvoie une page 404.
   const creation = await prisma.creation.findFirst({ where: { id, userId: user.id } });
   if (!creation) notFound();
+  const [folders, tagRows] = await Promise.all([
+    prisma.folder.findMany({ where: { userId: user.id }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.creation.findMany({ where: { userId: user.id, NOT: { tags: { isEmpty: true } } }, select: { tags: true } }),
+  ]);
+  const knownTags = [...new Set(tagRows.flatMap((r) => r.tags))].sort((a, b) => a.localeCompare(b, "fr"));
 
   const content = readContent(creation.content);
 
@@ -45,10 +52,22 @@ async function CreationDetails({ params }: { params: Promise<{ id: string }> }) 
         <p className={`text-sm font-medium ${content ? "text-violet-700" : "text-emerald-700"}`}>
           {content ? "✨ Contenu généré" : "✓ Création enregistrée"}
         </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">{FORMAT_LABELS[creation.format]}</h1>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">{displayTitle(creation)}</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          {SOURCE_LABELS[creation.sourceType]} · {formatDate(creation.createdAt)}
+          {FORMAT_LABELS[creation.format]} · {SOURCE_LABELS[creation.sourceType]} · {formatDate(creation.createdAt)}
         </p>
+
+        <div className="mt-5">
+          <OrganisationPanel
+            creationId={creation.id}
+            title={creation.title}
+            suggestedTitle={displayTitle({ ...creation, title: null })}
+            folderId={creation.folderId}
+            folders={folders}
+            tags={creation.tags}
+            knownTags={knownTags}
+          />
+        </div>
 
         <details className="group mt-6 rounded-xl border-l-4 border-violet-400 bg-zinc-50 p-4" open={!content}>
           <summary className="cursor-pointer text-sm font-semibold text-zinc-700">

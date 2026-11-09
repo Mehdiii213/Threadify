@@ -148,7 +148,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 ## Reprise — prochaine étape (point au 2026-11-09)
 
 - **Étapes 0 à 6 validées — le MVP est complet** (étape 6 validée le 2026-11-09).
-- **Étape 7 — abonnement : plan validé le 2026-11-09 avec 3 offres** (choix de l'utilisateur) : **Gratuit** 3 générations/mois avec filigrane « Fait avec Threadify » sur les exports ; **Pro** 12 €/mois, 100 générations/mois ; **Expert** 19 €/mois, générations **illimitées** (garde-fou anti-abus proposé : 30 générations/heure max, à retirer si l'utilisateur le demande). Dépendances `stripe` + `@better-auth/stripe` acceptées ; l'utilisateur crée un compte Stripe en mode test. **En cours de développement.**
+- **Étape 7 — abonnement : plan validé le 2026-11-09 avec 3 offres** (choix de l'utilisateur) : **Gratuit** 3 générations/mois avec filigrane « Fait avec Threadify » sur les exports ; **Pro** 12 €/mois, 100 générations/mois ; **Expert** 19 €/mois, générations **illimitées** (garde-fou anti-abus **confirmé par l'utilisateur le 2026-11-09** : 30 générations/heure max, `EXPERT_HOURLY_LIMIT` dans `src/lib/plans.ts`, mentionné sur /tarifs ; il ne borne pas le coût mensuel — plafond journalier ou mensuel d'usage raisonnable proposé à l'utilisateur, en attente de réponse). Dépendances `stripe` + `@better-auth/stripe` acceptées ; l'utilisateur crée un compte Stripe en mode test. **En cours de développement.**
 
 ### Plan proposé — Étape 7 : abonnement mensuel
 

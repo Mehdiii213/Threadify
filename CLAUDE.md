@@ -153,7 +153,9 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 7 — Abonnement mensuel (Stripe) : Gratuit 3/mois + filigrane, Pro 12 € 100/mois, Expert 19 € illimité (100/jour, 30/heure), quotas, page cachée `/admin/couts` — validée le 2026-11-10
 - [ ] Étape 8 — **8a codée le 2026-11-10, en test chez l'utilisateur** (`docs/tester-etape-8a.md`) ; 8b et 8c à faire — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-10)
+## Reprise — prochaine étape (point au 2026-11-10, fin de séance)
+
+- **Au retour de l'utilisateur** : (1) recueillir le résultat de son test de l'étape 8a (`docs/tester-etape-8a.md` ; son compte existant doit d'abord confirmer son adresse, étape G) ; (2) il a promis d'envoyer **les infos légales** — nom / société, statut, SIRET, adresse, e-mail de contact, franchise de TVA ou TVA 20 %, n° de TVA intracommunautaire éventuel, médiateur de la consommation — à reporter dans `src/lib/legal.ts` ; (3) ses choix pour la 8b (hébergeur et budget, nom de domaine, compte Resend). Puis cocher 8a, mettre à jour ce fichier et attaquer la 8b.
 
 - **Étapes 0 à 7 validées** (étape 7 validée le 2026-11-10 après test chez l'utilisateur : tarifs, filigrane, paiement test, portail + résiliation corrigée, page `/admin/couts`).
 - **Étape 8 — mise en ligne** : l'utilisateur a dit « commençons par l'étape 8a » (2026-11-10) → **8a codée, poussée, à tester chez lui** avec `docs/tester-etape-8a.md`. Restent en attente de ses réponses : (1) hébergeur et budget (Vercel + Supabase proposés), (2) nom de domaine, (3) statut juridique et TVA → à reporter dans `src/lib/legal.ts` (`editor`, `vatRegime`, `mediator`), (4) création du compte Resend (8b). Les valeurs `[…]` des pages légales sont surlignées en jaune tant qu'elles ne sont pas remplies.

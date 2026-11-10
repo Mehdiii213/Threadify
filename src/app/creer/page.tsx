@@ -4,7 +4,7 @@ import { CreateForm } from "@/components/create-form";
 import { SiteHeader } from "@/components/site-header";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Nouvelle création — Threadify" };
+export const metadata: Metadata = { title: "Nouvelle création", robots: { index: false } };
 
 export default function CreerPage() {
   return (

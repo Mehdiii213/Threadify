@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 // En-tête commun : logo + lien de compte (selon la session).
 export function SiteHeader({ children }: { children?: React.ReactNode }) {
   return (
+    <>
     <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-6">
       <Link href="/" className="text-xl font-bold tracking-tight">
         Thread<span className="text-violet-600">ify</span>
@@ -19,6 +20,27 @@ export function SiteHeader({ children }: { children?: React.ReactNode }) {
         </Suspense>
       </div>
     </header>
+      <Suspense fallback={null}>
+        <VerifyEmailBanner />
+      </Suspense>
+    </>
+  );
+}
+
+// Étape 8a : rappel tant que l'adresse e-mail n'est pas confirmée.
+async function VerifyEmailBanner() {
+  const session = await getSession();
+  if (!session || session.user.emailVerified) return null;
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6">
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+        📩 Confirmez votre adresse e-mail (<strong>{session.user.email}</strong>) en cliquant sur le lien reçu : c&apos;est nécessaire pour
+        générer du contenu avec l&apos;IA.{" "}
+        <Link href="/compte" className="font-semibold text-violet-700 underline">
+          Renvoyer l&apos;e-mail
+        </Link>
+      </p>
+    </div>
   );
 }
 

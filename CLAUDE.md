@@ -94,10 +94,16 @@ src/lib/export.ts           # export navigateur : PNG (modern-screenshot), ZIP (
 src/lib/organisation.ts     # titres affichés, étiquettes, limites (dossiers, pages)
 src/lib/plans.ts, billing.ts, stripe.ts, admin.ts  # offres, quotas, Stripe, administration
 src/app/tarifs/, src/app/abonnement/, src/app/admin/couts/  # pages de l'étape 7
+src/lib/email.ts            # e-mails (API Resend via fetch ; sans clé : lien affiché dans la console)
+src/lib/legal.ts, site.ts   # infos légales à compléter + régime de TVA ; adresse publique du site
+src/app/compte/, mot-de-passe-oublie/, nouveau-mot-de-passe/, compte-supprime/  # compte (étape 8a)
+src/app/mentions-legales/, cgv/, confidentialite/  # pages légales (modèles, src/components/legal-page.tsx)
+src/app/robots.ts, sitemap.ts, opengraph-image.tsx, icon.svg  # référencement et aperçu de partage
+src/components/password-forms.tsx, site-footer.tsx  # formulaires de compte, pied de page
 src/app/espace/actions.ts   # actions du tableau de bord (dossiers, étiquettes, dupliquer, supprimer…)
 src/components/dashboard/   # menu de carte, navigation des dossiers
 src/components/organisation-panel.tsx  # titre / dossier / étiquettes d'une création
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7)
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7, tester-etape-8a)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -145,12 +151,12 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
 - [x] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — validée le 2026-11-09 — **MVP complet**
 - [x] Étape 7 — Abonnement mensuel (Stripe) : Gratuit 3/mois + filigrane, Pro 12 € 100/mois, Expert 19 € illimité (100/jour, 30/heure), quotas, page cachée `/admin/couts` — validée le 2026-11-10
-- [ ] Étape 8 — **plan proposé le 2026-11-10, à valider** — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
+- [ ] Étape 8 — **8a codée le 2026-11-10, en test chez l'utilisateur** (`docs/tester-etape-8a.md`) ; 8b et 8c à faire — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
 ## Reprise — prochaine étape (point au 2026-11-10)
 
 - **Étapes 0 à 7 validées** (étape 7 validée le 2026-11-10 après test chez l'utilisateur : tarifs, filigrane, paiement test, portail + résiliation corrigée, page `/admin/couts`).
-- **Étape 8 — mise en ligne : plan proposé le 2026-11-10, PAS encore validé.** Attendre les réponses de l'utilisateur : (1) hébergeur et budget, (2) nom de domaine, (3) statut juridique et TVA, (4) accord pour le service d'e-mails (Resend) — puis coder par sous-étapes.
+- **Étape 8 — mise en ligne** : l'utilisateur a dit « commençons par l'étape 8a » (2026-11-10) → **8a codée, poussée, à tester chez lui** avec `docs/tester-etape-8a.md`. Restent en attente de ses réponses : (1) hébergeur et budget (Vercel + Supabase proposés), (2) nom de domaine, (3) statut juridique et TVA → à reporter dans `src/lib/legal.ts` (`editor`, `vatRegime`, `mediator`), (4) création du compte Resend (8b). Les valeurs `[…]` des pages légales sont surlignées en jaune tant qu'elles ne sont pas remplies.
 
 ### Plan proposé — Étape 8 : mise en ligne (en 3 sous-étapes, chacune vérifiée)
 
@@ -237,6 +243,14 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-09 — Filigrane « Fait avec Threadify » (prop `watermark` de `Slide`, en haut à droite) sur l'aperçu et l'export de l'offre Gratuite. Pages `/tarifs` (publique) et `/abonnement` (protégée par le proxy) ; lien « Tarifs » dans l'en-tête ; case « Générations ce mois-ci · offre … » dans l'espace.
 - 2026-11-10 — Étape 7 validée par l'utilisateur après test chez lui (paiement test, portail, résiliation, page des coûts).
 
+- 2026-11-10 — 8a : e-mails via l'**API REST de Resend appelée avec `fetch`** (`src/lib/email.ts`, aucune dépendance npm ajoutée) ; variables `RESEND_API_KEY`, `EMAIL_FROM` (défaut `Threadify <onboarding@resend.dev>`, qui n'envoie qu'à l'adresse du compte Resend). **Sans clé : l'e-mail n'est pas envoyé, son lien s'affiche dans la console** (`[e-mail] … Lien : …`) — permet de tout tester en local. Un échec d'envoi est journalisé, jamais bloquant.
+- 2026-11-10 — Vérification d'adresse **souple** : `emailVerification.sendOnSignUp`, lien valable 24 h, `autoSignInAfterVerification`, retour sur `/espace?email=confirme` ; le compte reste utilisable (pas de `requireEmailVerification`, qui aurait bloqué les comptes existants), mais **`generateCreation` refuse tant que `emailVerified` est faux** (l'IA coûte ; évite les fausses adresses pour multiplier les quotas gratuits). Bandeau jaune dans `SiteHeader` tant que l'adresse n'est pas confirmée.
+- 2026-11-10 — Mot de passe oublié : `/mot-de-passe-oublie` → `authClient.requestPasswordReset({ redirectTo: /nouveau-mot-de-passe })` → lien 1 h, usage unique → `/nouveau-mot-de-passe?token=` (ou `?error=INVALID_TOKEN`) ; `revokeSessionsOnPasswordReset`. `/compte` : infos, renvoi de l'e-mail, changement de mot de passe (`revokeOtherSessions`), suppression.
+- 2026-11-10 — Suppression de compte : `user.deleteUser` avec **mot de passe + mot SUPPRIMER** ; `beforeDelete` résilie **immédiatement** les abonnements Stripe (`subscriptions.cancel`, factures conservées chez Stripe) et supprime les lignes `subscription` ; si Stripe échoue (sauf `resource_missing`), la suppression est annulée (`STRIPE_CANCEL_FAILED`). Créations, dossiers, sessions : cascade. **`GenerationEvent.userId` devient optionnel (`onDelete: SetNull`)** pour garder l'historique des coûts, anonyme (« (compte supprimé) » sur `/admin/couts`). Migration `20261110152845_securite` (+ table `rate_limit`).
+- 2026-11-10 — Limitation des tentatives Better Auth stockée **en base** (`rateLimit.storage: "database"`, fonctionne avec plusieurs serveurs) : connexion 5 / 5 min, inscription 5 / h, mot de passe oublié et renvoi d'e-mail 3 / 15 min, suppression 5 / 5 min ; **active seulement en production** (vérifié avec `next build` + `next start` : 429, `x-retry-after: 300`).
+- 2026-11-10 — Pages légales en **modèles** (`/mentions-legales`, `/cgv` = CGU + CGV, `/confidentialite`) alimentées par `src/lib/legal.ts` ; valeurs `[…]` surlignées (`<Fill>`). Rétractation : 14 jours avec remboursement au prorata (L221-25) ; sous-traitants Vercel, Supabase (UE), Anthropic, Stripe, Resend ; cookies strictement nécessaires → pas de bandeau. `vatRegime` (`tva20` par défaut / `franchise`) pilote la mention sous les tarifs et la TVA de `/admin/couts`. Mention d'acceptation des CGU sous le formulaire d'inscription.
+- 2026-11-10 — Finitions : pied de page (`SiteFooter` dans le layout), titres `"%s — Threadify"` (template du layout ; les pages ne mettent plus « — Threadify »), `metadataBase` = `BETTER_AUTH_URL`, Open Graph `fr_FR`, `opengraph-image.tsx` (1200×630), `icon.svg` (remplace `favicon.ico`), `robots.ts` (pages privées exclues) et `sitemap.ts` (pages publiques), `robots: { index: false }` sur les pages privées.
+
 ## Pièges rencontrés
 
 > Format : `Problème — Cause — Solution`
@@ -277,6 +291,11 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - **Pièges de l'environnement cloud** : (1) le SDK Stripe (client HTTP Node par défaut) ignore `HTTPS_PROXY` → `httpClient: Stripe.createFetchHttpClient()` dans `src/lib/stripe.ts` + lancer le serveur avec `NODE_USE_ENV_PROXY=1 npm run dev` ; (2) Chromium de Playwright : `launch({ proxy: { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } })` + `ignoreHTTPSErrors` ; (3) hôtes Stripe ajoutés à l'environnement (checkout.stripe.com, js.stripe.com, m.stripe.network, m.stripe.com, q.stripe.com, r.stripe.com, b.stripecdn.com, billing.stripe.com) ; (4) **le proxy injecte la clé secrète dans TOUTES les requêtes vers api.stripe.com, y compris celles du navigateur** (Checkout, portail) → Stripe refuse (402 sur `/v1/payment_methods`, portail blanc) : le paiement par carte et le portail se testent chez l'utilisateur ; (5) premier formulaire de clé rempli avec un mot de passe au lieu de `sk_test_…` (Stripe : « Invalid API Key ») → formulaire renvoyé, utilisateur prévenu de changer ce mot de passe s'il est réutilisé ; (6) Stripe « Adaptive Pricing » affiche le prix en USD depuis le conteneur (situé aux États-Unis) — en euros pour les clients en France.
 - **Bug trouvé par l'utilisateur (2026-11-10)** : résiliation faite depuis le **portail Stripe** non affichée — le portail enregistre une **date `cancel_at`** (fin de période) et laisse `cancel_at_period_end = false` ; la page ne regardait que `cancelAtPeriodEnd`. Corrigé avec `scheduledEnd()` dans `src/lib/billing.ts` (date `cancelAt`, sinon `periodEnd` si `cancelAtPeriodEnd`), vérifié en reproduisant le cas via l'API. Tests utilisateur de l'étape 7 au 2026-11-10 : page `/admin/couts` OK (après correction de `ADMIN_EMAILS` + relance du site), paiement test OK, résiliation corrigée à revérifier chez lui.
 - `/admin/couts` affichait « Page introuvable » chez l'utilisateur — `ADMIN_EMAILS` ne correspondait pas à l'e-mail du compte / site non relancé après modification du `.env` — vérifier avec `node -e "require('dotenv').config();console.log(JSON.stringify(process.env.ADMIN_EMAILS))"` puis relancer `npm run dev`.
+
+- Better Auth « Prisma schema mismatch — Missing tables rateLimit » (page « This page couldn't load ») — `prisma migrate dev` de Prisma 7 **ne régénère plus le client** — lancer `npx prisma generate` puis relancer le serveur (chez l'utilisateur, `npm install` le fait via `postinstall`).
+- `robots.txt` et `sitemap.xml` sont **statiques** (calculés au `next build`) — `BETTER_AUTH_URL` doit être la vraie adresse **au moment de la construction** sur l'hébergeur.
+- Avertissement d'hydratation `caret-color: transparent` dans la console pendant les tests — ajouté par Playwright pour ses captures, pas un bug du site.
+- Pièges de test : sur `/creer`, choisir un format (`text=Carrousel Instagram`) avant « Continuer » ; récupérer les liens d'e-mail dans le journal du serveur (`Objet : … Lien : …`) ; abonnement de test pour la suppression : client Stripe créé à l'inscription + `pm_card_visa` + ligne `subscription` insérée en base.
 
 ## Questions ouvertes
 

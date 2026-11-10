@@ -47,6 +47,14 @@ export function GenerateButton({ creationId, regenerate }: { creationId: string;
       {state.error && !pending && (
         <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}
+          {state.verify && (
+            <>
+              {" "}
+              <Link href="/compte" className="font-semibold text-violet-700 underline">
+                Renvoyer l&apos;e-mail →
+              </Link>
+            </>
+          )}
           {state.upgrade && (
             <>
               {" "}

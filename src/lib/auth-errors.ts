@@ -9,7 +9,14 @@ const messages: Record<string, string> = {
   PASSWORD_TOO_LONG: "Le mot de passe est trop long (128 caractères maximum).",
   USER_NOT_FOUND: "Aucun compte ne correspond à cette adresse e-mail.",
   FAILED_TO_CREATE_USER: "Impossible de créer le compte. Réessayez dans un instant.",
-  TOO_MANY_REQUESTS: "Trop de tentatives. Patientez quelques instants puis réessayez.",
+  INVALID_TOKEN: "Ce lien n'est plus valable. Demandez-en un nouveau.",
+  TOKEN_EXPIRED: "Ce lien a expiré. Demandez-en un nouveau.",
+  EMAIL_ALREADY_VERIFIED: "Votre adresse e-mail est déjà confirmée.",
+  SESSION_EXPIRED: "Par sécurité, reconnectez-vous puis recommencez.",
+  CREDENTIAL_ACCOUNT_NOT_FOUND: "Aucun mot de passe n'est associé à ce compte.",
+  STRIPE_CANCEL_FAILED:
+    "Votre abonnement n'a pas pu être résilié automatiquement, le compte n'a donc pas été supprimé. Réessayez dans un instant.",
+  TOO_MANY_REQUESTS: "Trop de tentatives. Par sécurité, patientez quelques minutes puis réessayez.",
 };
 
 export function authErrorMessage(error: { code?: string; status?: number } | null | undefined) {

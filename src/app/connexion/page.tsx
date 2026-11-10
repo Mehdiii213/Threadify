@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth-card";
 import { AuthForm } from "@/components/auth-form";
 
-export const metadata: Metadata = { title: "Connexion — Threadify" };
+export const metadata: Metadata = { title: "Connexion" };
 
 export default function ConnexionPage() {
   return (

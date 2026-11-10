@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/creations";
 import { PLANS } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Mon abonnement — Threadify" };
+export const metadata: Metadata = { title: "Mon abonnement", robots: { index: false } };
 
 export default function AbonnementPage({ searchParams }: PageProps<"/abonnement">) {
   return (

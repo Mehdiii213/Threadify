@@ -4,9 +4,10 @@ import { PlanCards } from "@/components/plan-cards";
 import { SiteHeader } from "@/components/site-header";
 import { billingEnabled, getUserPlan } from "@/lib/billing";
 import { EXPERT_DAILY_LIMIT, EXPERT_HOURLY_LIMIT } from "@/lib/plans";
+import { vatMention } from "@/lib/legal";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Tarifs — Threadify" };
+export const metadata: Metadata = { title: "Tarifs" };
 
 export default function TarifsPage() {
   return (
@@ -25,7 +26,7 @@ export default function TarifsPage() {
           </Suspense>
         </div>
         <p className="mt-8 text-center text-xs text-zinc-500">
-          Prix TTC, prélevés chaque mois. * Usage raisonnable : {EXPERT_DAILY_LIMIT} générations par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum.
+          {vatMention()}, prélevés chaque mois. * Usage raisonnable : {EXPERT_DAILY_LIMIT} générations par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum.
           Paiement sécurisé par Stripe.
         </p>
       </section>

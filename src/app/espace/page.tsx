@@ -16,7 +16,7 @@ import { PLANS } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Mon espace — Threadify" };
+export const metadata: Metadata = { title: "Mon espace", robots: { index: false } };
 
 // ─── Filtres lus dans l'adresse : ?dossier=…&format=…&statut=…&etiquette=…&q=…&page=… ───
 
@@ -137,12 +137,20 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
 
   return (
     <>
+      {sp.email === "confirme" && user.emailVerified && (
+        <p role="status" className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          ✓ Votre adresse e-mail est confirmée. Vous pouvez maintenant générer vos contenus avec l&apos;IA.
+        </p>
+      )}
       {/* En-tête */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Bonjour {firstName} 👋</h1>
           <p className="mt-1 text-zinc-600">
-            Connecté avec <span className="font-medium text-zinc-800">{user.email}</span>
+            Connecté avec <span className="font-medium text-zinc-800">{user.email}</span> ·{" "}
+            <Link href="/compte" className="font-medium text-violet-700 hover:underline">
+              Mon compte
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-3">

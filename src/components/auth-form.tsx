@@ -28,6 +28,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           name: String(form.get("name") ?? "").trim(),
           email,
           password,
+          callbackURL: "/espace?email=confirme", // page affichée après le clic sur le lien de confirmation
         })
       : await authClient.signIn.email({ email, password });
     setPending(false);
@@ -67,10 +68,31 @@ export function AuthForm({ mode }: { mode: Mode }) {
         />
         {isSignUp && <span className="text-xs text-zinc-500">8 caractères minimum.</span>}
       </label>
+      {!isSignUp && (
+        <p className="-mt-2 text-right text-sm">
+          <Link href="/mot-de-passe-oublie" className="font-medium text-violet-700 hover:underline">
+            Mot de passe oublié ?
+          </Link>
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
+        </p>
+      )}
+
+      {isSignUp && (
+        <p className="text-xs leading-relaxed text-zinc-500">
+          En créant un compte, vous acceptez les{" "}
+          <Link href="/cgv" className="underline hover:text-violet-700">
+            conditions générales
+          </Link>{" "}
+          et la{" "}
+          <Link href="/confidentialite" className="underline hover:text-violet-700">
+            politique de confidentialité
+          </Link>
+          . Un e-mail vous sera envoyé pour confirmer votre adresse.
         </p>
       )}
 

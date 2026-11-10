@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth-card";
 import { AuthForm } from "@/components/auth-form";
 
-export const metadata: Metadata = { title: "Créer un compte — Threadify" };
+export const metadata: Metadata = { title: "Créer un compte" };
 
 export default function InscriptionPage() {
   return (

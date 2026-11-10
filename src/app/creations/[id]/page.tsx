@@ -16,7 +16,7 @@ import { PLANS } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Ma création — Threadify" };
+export const metadata: Metadata = { title: "Ma création", robots: { index: false } };
 
 export default function CreationPage({ params }: PageProps<"/creations/[id]">) {
   return (

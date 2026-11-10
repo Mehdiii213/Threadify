@@ -5,6 +5,7 @@
 // Étape 4 : design des carrousels.
 // Étape 6 : titres, dossiers et étiquettes.
 // Étape 7 : abonnements Stripe et compteur de générations.
+// Étape 8a : limitation des tentatives (rate limit) et suppression de compte.
 
 generator client {
   provider = "prisma-client"
@@ -177,8 +178,9 @@ model Subscription {
 // quotas mensuels des offres et au garde-fou horaire de l'offre Expert.
 model GenerationEvent {
   id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Compte supprimé : la ligne reste (anonyme) pour l'historique des coûts.
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   creationId   String?
   createdAt    DateTime @default(now())
   // Coût réel de la génération (suivi réservé à l'administrateur, page /admin/couts)
@@ -190,4 +192,15 @@ model GenerationEvent {
   @@index([userId, createdAt])
   @@index([createdAt])
   @@map("generation_event")
+}
+
+// Limitation des tentatives (connexion, inscription, e-mails) par Better Auth.
+// Stockée en base pour fonctionner aussi sur un hébergeur à plusieurs serveurs.
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limit")
 }

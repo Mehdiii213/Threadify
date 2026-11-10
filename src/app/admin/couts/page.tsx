@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { LEGAL, vatRate } from "@/lib/legal";
 import { isAdmin, usdToEurRate } from "@/lib/admin";
 import { PLANS, isPlanId, type PlanId } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
@@ -10,11 +11,10 @@ import { getSession } from "@/lib/session";
 
 // Page réservée à l'administrateur (ADMIN_EMAILS) : aucun lien n'y mène, et
 // toute autre personne obtient la page 404 « Page introuvable ».
-export const metadata: Metadata = { title: "Coûts — Threadify", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Coûts", robots: { index: false, follow: false } };
 
 const STRIPE_FEE_RATE = 0.015; // carte européenne (estimation)
 const STRIPE_FEE_FIXED = 0.25; // € par paiement (estimation)
-const VAT = 0.2;
 
 const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 const usd = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 4 });
@@ -24,7 +24,7 @@ const int = new Intl.NumberFormat("fr-FR");
 function netRevenue(plan: PlanId) {
   const price = PLANS[plan].price;
   if (price === 0) return 0;
-  return price / (1 + VAT) - (price * STRIPE_FEE_RATE + STRIPE_FEE_FIXED);
+  return price / (1 + vatRate()) - (price * STRIPE_FEE_RATE + STRIPE_FEE_FIXED);
 }
 
 function monthRange(param: string | undefined) {
@@ -80,19 +80,20 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
     if (isPlanId(p)) planOf.set(s.referenceId, p);
   }
   const userIds = [...new Set([...byUser.map((r) => r.userId), ...planOf.keys()])];
-  const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, email: true } });
+  const users = await prisma.user.findMany({ where: { id: { in: userIds.filter((id): id is string => id !== null) } }, select: { id: true, email: true } });
   const emailOf = new Map(users.map((u) => [u.id, u.email]));
   const statsOf = new Map(byUser.map((r) => [r.userId, r]));
 
   const rows = userIds
     .map((id) => {
       const st = statsOf.get(id);
-      const plan = planOf.get(id) ?? "gratuit";
+      const plan = (id && planOf.get(id)) || "gratuit";
       const costEur = (st?._sum.costUsd ?? 0) * rate;
       const revenue = netRevenue(plan);
       return {
         id,
-        email: emailOf.get(id) ?? "(compte supprimé)",
+        // id null : générations de comptes supprimés depuis (historique anonyme)
+        email: (id && emailOf.get(id)) || "(compte supprimé)",
         plan,
         generations: st?._count._all ?? 0,
         costUsd: st?._sum.costUsd ?? 0,
@@ -149,7 +150,7 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
         ))}
       </div>
       <p className="mt-2 text-xs text-zinc-500">
-        Coût réel facturé par Anthropic : {usd.format(totals.costUsd)} (converti au taux de {rate} € pour 1 $). Revenus nets = prix TTC − TVA 20 % − frais Stripe estimés
+        Coût réel facturé par Anthropic : {usd.format(totals.costUsd)} (converti au taux de {rate} € pour 1 $). Revenus nets = prix payé − TVA ({LEGAL.vatRegime === "franchise" ? "franchise : 0 %" : "20 %"}) − frais Stripe estimés
         (1,5 % + 0,25 €). Les générations antérieures à la mise en place du suivi ont un coût de 0.
       </p>
 
@@ -175,7 +176,7 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className={r.margin < 0 ? "bg-red-50" : ""}>
+                <tr key={r.id ?? "supprime"} className={r.margin < 0 ? "bg-red-50" : ""}>
                   <td className="px-4 py-3 font-medium">{r.email}</td>
                   <td className="px-4 py-3">{PLANS[r.plan].label}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{int.format(r.generations)}</td>

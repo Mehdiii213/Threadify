@@ -17,7 +17,7 @@ import { GenerationError, generateContent } from "@/lib/generation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 
-export type GenerateState = { error?: string; upgrade?: boolean };
+export type GenerateState = { error?: string; upgrade?: boolean; verify?: boolean };
 
 // Appelée via useActionState (l'état précédent, passé en 2e argument, est ignoré).
 export async function generateCreation(creationId: string): Promise<GenerateState> {
@@ -29,6 +29,14 @@ export async function generateCreation(creationId: string): Promise<GenerateStat
     select: { id: true, sourceType: true, sourceText: true, format: true },
   });
   if (!creation) return { error: "Création introuvable." };
+
+  // Étape 8a : l'IA (qui coûte) n'est disponible qu'aux adresses e-mail confirmées.
+  if (!user.emailVerified) {
+    return {
+      error: "Confirmez d'abord votre adresse e-mail : cliquez sur le lien reçu par e-mail lors de votre inscription.",
+      verify: true,
+    };
+  }
 
   // Quotas de l'offre (étape 7) : vérifiés AVANT d'appeler l'IA (qui coûte).
   const quota = await checkQuota(user.id);

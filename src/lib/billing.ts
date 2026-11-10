@@ -20,6 +20,17 @@ export async function getActiveSubscription(userId: string) {
   });
 }
 
+/**
+ * Résiliation programmée ? Stripe l'indique de deux façons selon l'origine :
+ * `cancel_at_period_end` (ancienne méthode, API) ou une date `cancel_at`
+ * (méthode du portail client Stripe). Renvoie la date de fin, ou null.
+ */
+export function scheduledEnd(sub: { cancelAtPeriodEnd: boolean | null; cancelAt: Date | null; periodEnd: Date | null }) {
+  if (sub.cancelAt) return sub.cancelAt;
+  if (sub.cancelAtPeriodEnd) return sub.periodEnd;
+  return null;
+}
+
 export async function getUserPlan(userId: string): Promise<PlanId> {
   const sub = await getActiveSubscription(userId);
   const plan = sub?.plan.toLowerCase();

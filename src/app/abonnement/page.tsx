@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ManageButton, UpgradeButton } from "@/components/billing-buttons";
 import { SiteHeader } from "@/components/site-header";
-import { billingEnabled, getActiveSubscription, getUsage, syncSubscriptionFromStripe } from "@/lib/billing";
+import { billingEnabled, getActiveSubscription, getUsage, scheduledEnd, syncSubscriptionFromStripe } from "@/lib/billing";
 import { formatDate } from "@/lib/creations";
 import { PLANS } from "@/lib/plans";
 import { requireSession } from "@/lib/session";
@@ -50,11 +50,11 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
           <span className="text-2xl font-bold">{plan.label}</span>
           <span className="text-zinc-500">{plan.price} € / mois</span>
         </p>
-        {sub?.periodEnd && (
+        {sub && (scheduledEnd(sub) ?? sub.periodEnd) && (
           <p className="mt-2 text-sm text-zinc-600">
-            {sub.cancelAtPeriodEnd
-              ? `Résiliée : reste active jusqu'au ${formatDate(sub.periodEnd)}, puis retour à l'offre Gratuite.`
-              : `Prochain renouvellement le ${formatDate(sub.periodEnd)}.`}
+            {scheduledEnd(sub)
+              ? `Résiliée : reste active jusqu'au ${formatDate(scheduledEnd(sub)!)}, puis retour à l'offre Gratuite.`
+              : `Prochain renouvellement le ${formatDate(sub.periodEnd!)}.`}
           </p>
         )}
 

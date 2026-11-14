@@ -155,7 +155,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-14)
 
-- **2026-11-14 : prix changés à la demande de l'utilisateur** (Pro 15 €, Expert 23 €) — code + nouveaux tarifs Stripe test (Pro `price_1UbfLUAPdDZksFFK8iDmwUo8`, Expert `price_1UbfLVAPdDZksFFKxxSsOcW5`) ; l'utilisateur doit mettre à jour son `.env` avec `docs/changer-les-prix.md` (pas encore confirmé).
+- **2026-11-14 : prix changés à la demande de l'utilisateur** (Pro 15 €, Expert 23 €) — code + nouveaux tarifs Stripe test (Pro `price_1UbfLUAPdDZksFFK8iDmwUo8`, Expert `price_1UbfLVAPdDZksFFKxxSsOcW5`) ; l'utilisateur a mis à jour son `.env` avec `docs/changer-les-prix.md` : **prix vérifiés chez lui sur localhost le 2026-11-14 ✅**. Le reste (test 8a, infos légales, choix 8b) : « on verra plus tard ».
 
 - **Au retour de l'utilisateur** : (1) recueillir le résultat de son test de l'étape 8a (`docs/tester-etape-8a.md` ; son compte existant doit d'abord confirmer son adresse, étape G) ; (2) il a promis d'envoyer **les infos légales** — nom / société, statut, SIRET, adresse, e-mail de contact, franchise de TVA ou TVA 20 %, n° de TVA intracommunautaire éventuel, médiateur de la consommation — à reporter dans `src/lib/legal.ts` ; (3) ses choix pour la 8b (hébergeur et budget, nom de domaine, compte Resend). Puis cocher 8a, mettre à jour ce fichier et attaquer la 8b.
 

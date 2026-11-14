@@ -80,8 +80,8 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
       <div className="grid gap-4 sm:grid-cols-2">
         {usage.plan === "gratuit" && (
           <>
-            <UpgradeButton plan="pro" label="Passer à Pro — 12 € / mois" enabled={billingOn} />
-            <UpgradeButton plan="expert" label="Passer à Expert — 19 € / mois" enabled={billingOn} variant="secondary" />
+            <UpgradeButton plan="pro" label={`Passer à Pro — ${PLANS.pro.price} € / mois`} enabled={billingOn} />
+            <UpgradeButton plan="expert" label={`Passer à Expert — ${PLANS.expert.price} € / mois`} enabled={billingOn} variant="secondary" />
           </>
         )}
         {usage.plan !== "gratuit" && <ManageButton enabled={billingOn} />}

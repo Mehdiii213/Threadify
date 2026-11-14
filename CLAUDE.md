@@ -103,7 +103,7 @@ src/components/password-forms.tsx, site-footer.tsx  # formulaires de compte, pie
 src/app/espace/actions.ts   # actions du tableau de bord (dossiers, étiquettes, dupliquer, supprimer…)
 src/components/dashboard/   # menu de carte, navigation des dossiers
 src/components/organisation-panel.tsx  # titre / dossier / étiquettes d'une création
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7, tester-etape-8a)
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7, tester-etape-8a, changer-les-prix)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -150,10 +150,12 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 4 — Éditeur de carrousel (templates, couleurs, polices) — validée le 2026-11-06
 - [x] Étape 5 — Export (PNG / PDF / texte) — validée le 2026-11-09
 - [x] Étape 6 — Tableau de bord des créations sauvegardées (+ titres, dossiers, étiquettes) — validée le 2026-11-09 — **MVP complet**
-- [x] Étape 7 — Abonnement mensuel (Stripe) : Gratuit 3/mois + filigrane, Pro 12 € 100/mois, Expert 19 € illimité (100/jour, 30/heure), quotas, page cachée `/admin/couts` — validée le 2026-11-10
+- [x] Étape 7 — Abonnement mensuel (Stripe) : Gratuit 3/mois + filigrane, Pro 12 € (15 € depuis le 2026-11-14) 100/mois, Expert 19 € (23 € depuis le 2026-11-14) illimité (100/jour, 30/heure), quotas, page cachée `/admin/couts` — validée le 2026-11-10
 - [ ] Étape 8 — **8a codée le 2026-11-10, en test chez l'utilisateur** (`docs/tester-etape-8a.md`) ; 8b et 8c à faire — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-10, fin de séance)
+## Reprise — prochaine étape (point au 2026-11-14)
+
+- **2026-11-14 : prix changés à la demande de l'utilisateur** (Pro 15 €, Expert 23 €) — code + nouveaux tarifs Stripe test (Pro `price_1UbfLUAPdDZksFFK8iDmwUo8`, Expert `price_1UbfLVAPdDZksFFKxxSsOcW5`) ; l'utilisateur doit mettre à jour son `.env` avec `docs/changer-les-prix.md` (pas encore confirmé).
 
 - **Au retour de l'utilisateur** : (1) recueillir le résultat de son test de l'étape 8a (`docs/tester-etape-8a.md` ; son compte existant doit d'abord confirmer son adresse, étape G) ; (2) il a promis d'envoyer **les infos légales** — nom / société, statut, SIRET, adresse, e-mail de contact, franchise de TVA ou TVA 20 %, n° de TVA intracommunautaire éventuel, médiateur de la consommation — à reporter dans `src/lib/legal.ts` ; (3) ses choix pour la 8b (hébergeur et budget, nom de domaine, compte Resend). Puis cocher 8a, mettre à jour ce fichier et attaquer la 8b.
 
@@ -244,6 +246,8 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - 2026-11-09 — Tests Stripe réalisés par Claude : client Stripe créé à l'inscription ✅ ; « Passer à Pro » crée la session Checkout ✅ (page checkout.stripe.com affichée) ; abonnement Pro créé via l'API (`pm_card_visa`) puis affiché par Threadify (12 €, renouvellement, 0 / 100, « Votre offre actuelle ») ✅ ; bouton portail → billing.stripe.com ✅ ; résiliation (`cancel_at_period_end`) prise en compte par `syncSubscriptionFromStripe` ✅. **Non testable dans le cloud** : saisie de carte sur Checkout et affichage du portail (voir piège proxy) → à tester chez l'utilisateur.
 - 2026-11-09 — Filigrane « Fait avec Threadify » (prop `watermark` de `Slide`, en haut à droite) sur l'aperçu et l'export de l'offre Gratuite. Pages `/tarifs` (publique) et `/abonnement` (protégée par le proxy) ; lien « Tarifs » dans l'en-tête ; case « Générations ce mois-ci · offre … » dans l'espace.
 - 2026-11-10 — Étape 7 validée par l'utilisateur après test chez lui (paiement test, portail, résiliation, page des coûts).
+
+- 2026-11-14 — **Nouveaux prix : Pro 15 €, Expert 23 €** (demande de l'utilisateur). Prix affichés tirés de `PLANS` (`src/lib/plans.ts`, plus aucun prix écrit en dur, boutons de `/abonnement` compris) ; chez Stripe (test), un prix est immuable → nouveaux prix créés via l'API sur les mêmes produits (`prod_Vb2OpaR9REViQ2` Pro, `prod_Vb2RNjS8jln0bV` Expert), définis comme prix par défaut, anciens prix **archivés** (`price_1UZqJQ…` 12 €, `price_1UZqN6…` 19 €) ; les abonnements existants gardent leur ancien prix. Nouveaux identifiants : Pro `price_1UbfLUAPdDZksFFK8iDmwUo8`, Expert `price_1UbfLVAPdDZksFFKxxSsOcW5`. Vérifié : `/tarifs` et Checkout (17,20 $US = 15 € convertis depuis le conteneur américain). **En mode réel (8c), refaire de même avec les prix live.**
 
 - 2026-11-10 — 8a : e-mails via l'**API REST de Resend appelée avec `fetch`** (`src/lib/email.ts`, aucune dépendance npm ajoutée) ; variables `RESEND_API_KEY`, `EMAIL_FROM` (défaut `Threadify <onboarding@resend.dev>`, qui n'envoie qu'à l'adresse du compte Resend). **Sans clé : l'e-mail n'est pas envoyé, son lien s'affiche dans la console** (`[e-mail] … Lien : …`) — permet de tout tester en local. Un échec d'envoi est journalisé, jamais bloquant.
 - 2026-11-10 — Vérification d'adresse **souple** : `emailVerification.sendOnSignUp`, lien valable 24 h, `autoSignInAfterVerification`, retour sur `/espace?email=confirme` ; le compte reste utilisable (pas de `requireEmailVerification`, qui aurait bloqué les comptes existants), mais **`generateCreation` refuse tant que `emailVerified` est faux** (l'IA coûte ; évite les fausses adresses pour multiplier les quotas gratuits). Bandeau jaune dans `SiteHeader` tant que l'adresse n'est pas confirmée.

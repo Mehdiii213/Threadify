@@ -6,7 +6,7 @@ Durée : environ 25 minutes. Tout se fait en **mode test Stripe** : aucun vrai p
 
 Gardez sous la main (dans un Bloc-notes) :
 - votre **clé secrète Stripe de test** (commence par `sk_test_`) — Stripe → Développeurs → Clés API → « Révéler la clé de test » ;
-- vos deux identifiants de tarifs : **Pro** `price_1UZqJQAPdDZksFFKuVW0Qmea` et **Expert** `price_1UZqN6APdDZksFFKEiDy5U4O` ;
+- vos deux identifiants de tarifs : **Pro** `price_1UbfLUAPdDZksFFK8iDmwUo8` et **Expert** `price_1UbfLVAPdDZksFFKxxSsOcW5` ;
 - l'**adresse e-mail** avec laquelle vous vous connectez à Threadify (pour la page cachée des coûts).
 
 ---
@@ -31,8 +31,8 @@ Explorateur (**Windows + E**) → **Téléchargements** → **clic droit** sur l
 2. Cliquez **tout à la fin du texte**, appuyez **deux fois sur Entrée**, puis tapez (ou copiez-collez) ces lignes :
    ```
    STRIPE_SECRET_KEY="collez-ici-votre-cle-sk_test"
-   STRIPE_PRICE_PRO="price_1UZqJQAPdDZksFFKuVW0Qmea"
-   STRIPE_PRICE_EXPERT="price_1UZqN6APdDZksFFKEiDy5U4O"
+   STRIPE_PRICE_PRO="price_1UbfLUAPdDZksFFK8iDmwUo8"
+   STRIPE_PRICE_EXPERT="price_1UbfLVAPdDZksFFKxxSsOcW5"
    STRIPE_WEBHOOK_SECRET=""
    ADMIN_EMAILS="votre-adresse@exemple.fr"
    ```
@@ -69,7 +69,7 @@ npm run dev
 ## Étape G — La page « Tarifs » et votre compteur
 
 1. Ouvrez **`localhost:3000`** : ✅ en haut à droite, un lien **« Tarifs »**. Cliquez dessus.
-2. ✅ Trois offres côte à côte : **Gratuit 0 €**, **Pro 12 €** (encadrée en violet, « Le plus choisi »), **Expert 19 €**. Sur l'offre que vous avez, « Votre offre actuelle ».
+2. ✅ Trois offres côte à côte : **Gratuit 0 €**, **Pro 15 €** (encadrée en violet, « Le plus choisi »), **Expert 23 €**. Sur l'offre que vous avez, « Votre offre actuelle ».
 3. Allez dans **« Mon espace »** : ✅ la 4e case affiche **« Générations ce mois-ci · offre Gratuit »** et un compteur comme **« 0 / 3 »**. Cliquez dessus : vous arrivez sur **« Mon abonnement »** (barre d'utilisation, boutons « Passer à Pro » et « Passer à Expert »).
 
 ## Étape H — Le filigrane de l'offre Gratuite
@@ -78,8 +78,8 @@ Ouvrez un **carrousel** : ✅ en haut à droite de chaque slide, la mention disc
 
 ## Étape I — Passer à Pro (paiement de test)
 
-1. **« Mon abonnement »** → **« Passer à Pro — 12 € / mois »**.
-2. ✅ La page de paiement **Stripe** s'ouvre, avec la mention **« Environnement de test »** et « S'abonner à Threadify Pro — 12,00 € par mois ».
+1. **« Mon abonnement »** → **« Passer à Pro — 15 € / mois »**.
+2. ✅ La page de paiement **Stripe** s'ouvre, avec la mention **« Environnement de test »** et « S'abonner à Threadify Pro — 15,00 € par mois ».
 3. Remplissez avec la **carte de test** de Stripe (elle ne débite rien) :
    - **Numéro de carte** : `4242 4242 4242 4242`
    - **Date d'expiration** : n'importe quelle date future, par exemple `12 / 34`
@@ -88,7 +88,7 @@ Ouvrez un **carrousel** : ✅ en haut à droite de chaque slide, la mention disc
    - **Pays** : France
 4. Si une case « Enregistrer mes informations avec Link » est cochée, vous pouvez la décocher.
 5. Cliquez sur **« S'abonner »**.
-6. ✅ Après quelques secondes, retour sur Threadify, page **« Mon abonnement »**, avec un message vert **« ✓ Merci ! Votre paiement a bien été pris en compte. »**, l'offre **Pro — 12 € / mois**, la date du **prochain renouvellement**, et le compteur **« 0 / 100 »**.
+6. ✅ Après quelques secondes, retour sur Threadify, page **« Mon abonnement »**, avec un message vert **« ✓ Merci ! Votre paiement a bien été pris en compte. »**, l'offre **Pro — 15 € / mois**, la date du **prochain renouvellement**, et le compteur **« 0 / 100 »**.
    - Si l'offre affiche encore « Gratuit », attendez 5 secondes et rechargez la page (**F5**).
 7. Rouvrez un carrousel : ✅ la mention « Fait avec Threadify » a **disparu**.
 

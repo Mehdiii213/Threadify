@@ -158,6 +158,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-18)
 
+- **2026-11-18 (suite) : l'utilisateur a pu se reconnecter (mot de passe oublié) et a testé la page d'affiliation** — attendre sa validation complète de l'étape 9 (parcours filleul + paiement + commission).
 - **2026-11-18 : étape 9 (affiliation) codée, poussée, à tester chez l'utilisateur** avec `docs/tester-etape-9.md`. Réponses de l'utilisateur : **1a** commission 12 premiers mois, **2a** tous les comptes affiliés, **3 oui** −20 % sur le 1er mois du filleul, **4a** virement manuel dès 50 €, **5** sans cookie. Les tests 8a et les infos légales restent en attente.
 
 ### Étape 9 : programme d'affiliation (plan validé le 2026-11-18, codé — détails dans le journal)
@@ -324,6 +325,9 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - Rattachement du parrainage jamais enregistré — `src/proxy.ts` redirigeait **toute** requête vers `/inscription` d'un utilisateur connecté vers `/espace`, y compris la Server Action (POST) envoyée juste après l'inscription — redirection limitée aux requêtes `GET`.
 - Commissions jamais calculées dans le conteneur — le `.env` du conteneur contient `STRIPE_WEBHOOK_SECRET="whsec_non_utilise"`, donc le site croyait le webhook actif — `webhookConfigured()` n'est vrai qu'en production (`NODE_ENV`) avec un secret `whsec_…`.
 - `prisma migrate dev` refusé (« non-interactive environment ») dès qu'il y a un avertissement (ici : contrainte unique ajoutée) — créer le dossier de migration à la main avec `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > prisma/migrations/<horodatage>_<nom>/migration.sql`, puis `npx prisma migrate deploy` et `npx prisma generate`.
+
+- `npx prisma migrate deploy` chez l'utilisateur : `FATAL: (ENOTFOUND) tenant/user postgres.<ref> not found` — projet Supabase **mis en pause** (offre gratuite, inactivité) ou adresse « Session pooler » modifiée (`aws-0-…` → `aws-1-…`) — relancer le projet (« Restore project ») ou recopier l'adresse Session pooler dans `DATABASE_URL` ; résolu chez l'utilisateur le 2026-11-18.
+- Utilisateur ne se souvenait plus de ses identifiants Threadify — e-mail du compte retrouvé dans `ADMIN_EMAILS` du `.env`, puis « Mot de passe oublié » (lien affiché dans la fenêtre noire) — fonctionne ✅ (2026-11-18).
 
 ## Questions ouvertes
 

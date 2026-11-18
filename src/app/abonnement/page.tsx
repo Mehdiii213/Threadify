@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/site-header";
 import { billingEnabled, getActiveSubscription, getUsage, scheduledEnd, syncSubscriptionFromStripe } from "@/lib/billing";
 import { formatDate } from "@/lib/creations";
 import { PLANS } from "@/lib/plans";
+import { AFFILIATION } from "@/lib/affiliation-config";
+import { isEligibleForReferralDiscount } from "@/lib/affiliation";
 import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Mon abonnement", robots: { index: false } };
@@ -30,7 +32,11 @@ export default function AbonnementPage({ searchParams }: PageProps<"/abonnement"
 async function Subscription({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ user }, sp] = await Promise.all([requireSession(), searchParams]);
   await syncSubscriptionFromStripe(user.id);
-  const [usage, sub] = await Promise.all([getUsage(user.id), getActiveSubscription(user.id)]);
+  const [usage, sub, referralDiscount] = await Promise.all([
+    getUsage(user.id),
+    getActiveSubscription(user.id),
+    isEligibleForReferralDiscount(user.id),
+  ]);
   const plan = PLANS[usage.plan];
   const billingOn = billingEnabled();
   const percent = usage.limit ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
@@ -76,6 +82,13 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
           <p className="mt-2 text-xs text-zinc-500">Le compteur repart à zéro le 1er de chaque mois. Chaque génération ou régénération compte.</p>
         </div>
       </div>
+
+      {usage.plan === "gratuit" && referralDiscount && (
+        <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+          🎁 Parrainage : <strong>−{AFFILIATION.referralDiscountPercent} % sur votre premier mois</strong>, appliqués automatiquement sur la page de
+          paiement.
+        </p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {usage.plan === "gratuit" && (

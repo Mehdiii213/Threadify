@@ -150,6 +150,10 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Record<string
             Connecté avec <span className="font-medium text-zinc-800">{user.email}</span> ·{" "}
             <Link href="/compte" className="font-medium text-violet-700 hover:underline">
               Mon compte
+            </Link>{" "}
+            ·{" "}
+            <Link href="/affiliation" className="font-medium text-violet-700 hover:underline">
+              Affiliation (gagnez 30 %)
             </Link>
           </p>
         </div>

@@ -13,6 +13,9 @@ export function SiteFooter() {
           <Link href="/tarifs" className="hover:text-violet-700">
             Tarifs
           </Link>
+          <Link href="/conditions-affiliation" className="hover:text-violet-700">
+            Affiliation
+          </Link>
           <Link href="/mentions-legales" className="hover:text-violet-700">
             Mentions légales
           </Link>

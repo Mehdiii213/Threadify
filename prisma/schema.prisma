@@ -6,6 +6,7 @@
 // Étape 6 : titres, dossiers et étiquettes.
 // Étape 7 : abonnements Stripe et compteur de générations.
 // Étape 8a : limitation des tentatives (rate limit) et suppression de compte.
+// Étape 9 : programme d'affiliation (parrainage, commissions, versements).
 
 generator client {
   provider = "prisma-client"
@@ -35,7 +36,18 @@ model User {
   // Étape 7 : abonnement (extension Stripe de Better Auth) et compteur de générations
   stripeCustomerId String?
   generationEvents GenerationEvent[]
+  // Étape 9 : affiliation. referralCode = code personnel (créé à la 1re visite de
+  // la page Affiliation) ; referredBy = l'affilié qui a invité ce compte.
+  referralCode     String?           @unique
+  referredById     String?
+  referredBy       User?             @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referredAt       DateTime?
+  referrals        User[]            @relation("Referrals")
+  commissions      Commission[]      @relation("AffiliateCommissions")
+  referredCommissions Commission[]   @relation("ReferredCommissions")
+  payouts          Payout[]
 
+  @@index([referredById])
   @@map("user")
 }
 
@@ -203,4 +215,49 @@ model RateLimit {
   lastRequest BigInt
 
   @@map("rate_limit")
+}
+
+// ─── Étape 9 : affiliation ────────────────────────────────────────────────────
+
+enum CommissionStatus {
+  PENDING   // en attente (30 jours) puis disponible quand availableAt est passée
+  PAID      // versée à l'affilié
+  CANCELLED // paiement remboursé avant versement
+  REVERSED  // paiement remboursé après versement : déduite des gains suivants
+}
+
+// Une commission par facture Stripe payée par un filleul (30 % du montant HT).
+model Commission {
+  id              String           @id @default(cuid())
+  affiliateId     String
+  affiliate       User             @relation("AffiliateCommissions", fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredUserId  String?
+  referredUser    User?            @relation("ReferredCommissions", fields: [referredUserId], references: [id], onDelete: SetNull)
+  stripeInvoiceId String           @unique
+  paidAt          DateTime         // date du paiement du filleul
+  availableAt     DateTime         // paidAt + 30 jours
+  paidCents       Int              // montant payé par le filleul (TTC)
+  baseCents       Int              // base de calcul (HT)
+  amountCents     Int              // commission
+  status          CommissionStatus @default(PENDING)
+  payoutId        String?
+  payout          Payout?          @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+
+  @@index([affiliateId, status])
+  @@index([paidAt])
+  @@map("commission")
+}
+
+// Un virement fait à la main par l'administrateur à un affilié.
+model Payout {
+  id          String       @id @default(cuid())
+  affiliateId String
+  affiliate   User         @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amountCents Int
+  createdAt   DateTime     @default(now())
+  commissions Commission[]
+
+  @@index([affiliateId])
+  @@map("payout")
 }

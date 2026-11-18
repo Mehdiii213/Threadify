@@ -4,6 +4,7 @@ import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { stripe } from "@better-auth/stripe";
+import { ensureReferralCoupon, handleStripeEventForAffiliation, isEligibleForReferralDiscount } from "@/lib/affiliation";
 import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { stripeClient } from "@/lib/stripe";
@@ -16,8 +17,18 @@ const stripePlugins = stripeClient
         stripeClient,
         stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
         createCustomerOnSignUp: true,
+        // Étape 9 : paiements et remboursements → commissions d'affiliation (webhook, en ligne).
+        onEvent: async (event) => {
+          await handleStripeEventForAffiliation(event);
+        },
         subscription: {
           enabled: true,
+          // Étape 9 : un filleul qui s'abonne pour la première fois a −20 % sur son 1er mois.
+          getCheckoutSessionParams: async ({ user }) => {
+            if (!(await isEligibleForReferralDiscount(user.id))) return {};
+            const coupon = await ensureReferralCoupon();
+            return coupon ? { params: { discounts: [{ coupon }] } } : {};
+          },
           plans: [
             { name: "pro", priceId: process.env.STRIPE_PRICE_PRO, limits: { generations: 100 } },
             { name: "expert", priceId: process.env.STRIPE_PRICE_EXPERT, limits: { generations: null } },

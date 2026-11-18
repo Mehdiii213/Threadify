@@ -114,6 +114,13 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
     }),
     { generations: 0, costUsd: 0, costEur: 0, revenue: 0 },
   );
+  // Étape 9 : commissions d'affiliation des paiements du mois (hors annulées).
+  const commissionsAgg = await prisma.commission.aggregate({
+    where: { paidAt: { gte: range.start, lt: range.end }, status: { in: ["PENDING", "PAID"] } },
+    _sum: { amountCents: true },
+  });
+  const commissionsEur = (commissionsAgg._sum.amountCents ?? 0) / 100;
+  const margin = totals.revenue - totals.costEur - commissionsEur;
   const avg = totals.generations ? totals.costEur / totals.generations : 0;
 
   return (
@@ -135,15 +142,16 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
         </nav>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-6">
         {[
           ["Générations", int.format(totals.generations)],
           ["Coût de l'IA", `${eur.format(totals.costEur)}`],
           ["Coût moyen / génération", eur.format(avg)],
           ["Revenus nets (abonnés actifs)", eur.format(totals.revenue)],
-          ["Marge", eur.format(totals.revenue - totals.costEur)],
+          ["Commissions d'affiliation", eur.format(commissionsEur)],
+          ["Marge", eur.format(margin)],
         ].map(([label, value], i) => (
-          <div key={label} className={`rounded-2xl border bg-white p-4 shadow-sm ${i === 4 ? (totals.revenue - totals.costEur < 0 ? "border-red-300" : "border-emerald-300") : "border-zinc-200"}`}>
+          <div key={label} className={`rounded-2xl border bg-white p-4 shadow-sm ${i === 5 ? (margin < 0 ? "border-red-300" : "border-emerald-300") : "border-zinc-200"}`}>
             <p className="text-xs font-medium text-zinc-500">{label}</p>
             <p className="mt-1 text-xl font-bold tabular-nums">{value}</p>
           </div>
@@ -151,7 +159,12 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
       </div>
       <p className="mt-2 text-xs text-zinc-500">
         Coût réel facturé par Anthropic : {usd.format(totals.costUsd)} (converti au taux de {rate} € pour 1 $). Revenus nets = prix payé − TVA ({LEGAL.vatRegime === "franchise" ? "franchise : 0 %" : "20 %"}) − frais Stripe estimés
-        (1,5 % + 0,25 €). Les générations antérieures à la mise en place du suivi ont un coût de 0.
+        (1,5 % + 0,25 €). Les générations antérieures à la mise en place du suivi ont un coût de 0. Marge = revenus nets − coût de l&apos;IA − commissions
+        d&apos;affiliation (détail sur{" "}
+        <Link href="/admin/affiliation" className="font-semibold text-violet-700 hover:underline">
+          la page des affiliés
+        </Link>
+        ).
       </p>
 
       <div className="mt-8 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">

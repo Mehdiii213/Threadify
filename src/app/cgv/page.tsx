@@ -54,6 +54,15 @@ export default function CgvPage() {
       </section>
 
       <section>
+        <h2>3 bis. Parrainage</h2>
+        <p>
+          Un nouveau client inscrit avec le lien ou le code d&apos;un membre bénéficie d&apos;une réduction sur son premier mois
+          d&apos;abonnement. Le fonctionnement du programme est décrit dans les{" "}
+          <Link href="/conditions-affiliation">conditions du programme d&apos;affiliation</Link>.
+        </p>
+      </section>
+
+      <section>
         <h2>4. Paiement, renouvellement et résiliation</h2>
         <p>
           Le paiement est réalisé par carte bancaire via notre prestataire sécurisé Stripe ; {LEGAL.siteName} n&apos;a jamais accès à vos

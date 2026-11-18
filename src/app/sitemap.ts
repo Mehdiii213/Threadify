@@ -12,5 +12,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/mentions-legales`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/cgv`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/confidentialite`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${base}/conditions-affiliation`, changeFrequency: "yearly", priority: 0.2 },
   ];
 }

@@ -43,6 +43,11 @@ export default function ConfidentialitePage() {
             contrat).
           </li>
           <li>
+            <strong>Affiliation</strong> : le membre qui vous a parrainé, et, si vous êtes affilié, vos filleuls, les commissions et les
+            versements (ainsi que le RIB que vous nous transmettez pour être payé). Pour calculer et verser les commissions (exécution du
+            contrat, obligations comptables). Votre parrain ne voit que votre adresse e-mail masquée et le montant de vos paiements.
+          </li>
+          <li>
             <strong>Sécurité</strong> : adresse IP et navigateur liés à vos sessions, compteur de tentatives de connexion. Pour protéger les
             comptes contre les accès frauduleux (intérêt légitime).
           </li>

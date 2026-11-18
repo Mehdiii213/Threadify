@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { applyReferral, checkReferralCode } from "@/app/affiliation/actions";
 import { authErrorMessage } from "@/lib/auth-errors";
 
 type Mode = "inscription" | "connexion";
@@ -10,7 +11,8 @@ type Mode = "inscription" | "connexion";
 const inputClass =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-zinc-900 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200";
 
-export function AuthForm({ mode }: { mode: Mode }) {
+// referralCode : code de parrainage reçu dans le lien (?ref=…), prérempli à l'inscription.
+export function AuthForm({ mode, referralCode = "" }: { mode: Mode; referralCode?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const isSignUp = mode === "inscription";
@@ -23,6 +25,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
     const password = String(form.get("password") ?? "");
 
     setPending(true);
+    // Étape 9 : un code de parrainage saisi doit exister (vérifié avant de créer le compte).
+    const ref = isSignUp ? String(form.get("ref") ?? "").trim() : "";
+    if (ref) {
+      const check = await checkReferralCode(ref);
+      if (!check.ok) {
+        setPending(false);
+        setError(check.error);
+        return;
+      }
+    }
     const { error } = isSignUp
       ? await authClient.signUp.email({
           name: String(form.get("name") ?? "").trim(),
@@ -31,12 +43,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
           callbackURL: "/espace?email=confirme", // page affichée après le clic sur le lien de confirmation
         })
       : await authClient.signIn.email({ email, password });
-    setPending(false);
 
     if (error) {
+      setPending(false);
       setError(authErrorMessage(error));
       return;
     }
+    if (ref) await applyReferral(ref).catch(() => undefined);
     // Nouveau compte : direction la première création ; reconnexion : l'espace.
     // Navigation complète (et non router.push) : le routeur client garde en
     // mémoire les redirections vues avant la connexion (ex. /creer -> /inscription)
@@ -68,6 +81,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
         />
         {isSignUp && <span className="text-xs text-zinc-500">8 caractères minimum.</span>}
       </label>
+      {isSignUp && (
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-zinc-700">
+            Code de parrainage <span className="font-normal text-zinc-500">(facultatif)</span>
+          </span>
+          <input name="ref" type="text" defaultValue={referralCode} autoComplete="off" maxLength={20} className={`${inputClass} uppercase`} />
+        </label>
+      )}
       {!isSignUp && (
         <p className="-mt-2 text-right text-sm">
           <Link href="/mot-de-passe-oublie" className="font-medium text-violet-700 hover:underline">

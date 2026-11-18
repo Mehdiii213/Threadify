@@ -153,7 +153,15 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - [x] Étape 7 — Abonnement mensuel (Stripe) : Gratuit 3/mois + filigrane, Pro 12 € (15 € depuis le 2026-11-14) 100/mois, Expert 19 € (23 € depuis le 2026-11-14) illimité (100/jour, 30/heure), quotas, page cachée `/admin/couts` — validée le 2026-11-10
 - [ ] Étape 8 — **8a codée le 2026-11-10, en test chez l'utilisateur** (`docs/tester-etape-8a.md`) ; 8b et 8c à faire — Mise en ligne : hébergement, base de production, vraie adresse web, vérification d'e-mail, pages légales (mentions légales, CGV, confidentialité/RGPD)
 
-## Reprise — prochaine étape (point au 2026-11-14)
+## Reprise — prochaine étape (point au 2026-11-18)
+
+- **2026-11-18 : l'utilisateur veut un programme d'affiliation à 30 %.** Plan proposé (« Étape 9 — Affiliation », ci-dessous), **PAS encore validé** : attendre ses réponses aux 5 questions (durée de la commission, qui peut être affilié, avantage pour le filleul, mode de paiement des affiliés, suivi avec ou sans cookie). Points d'attention signalés : commission sur le prix **HT** ; marge Pro négative dans le pire cas (100 générations à ~9 € d'IA) si commission à vie → 12 mois recommandés ; cookie de suivi = consentement CNIL probable → suivi sans cookie recommandé.
+
+### Plan proposé — Étape 9 : programme d'affiliation (2026-11-18, à valider)
+
+- **9a — Parrainage** : chaque compte reçoit un code et un lien `https://<site>/inscription?ref=CODE` ; l'inscription via ce lien (ou en tapant le code) relie le filleul à l'affilié (`User.referralCode`, `User.referredById`, pas d'auto-parrainage) ; page **« Affiliation »** dans l'espace (lien à copier, nombre d'inscrits, d'abonnés, gains en attente / disponibles / versés) ; page **« Conditions du programme d'affiliation »**.
+- **9b — Commissions** : à chaque paiement d'un filleul, commission = 30 % du montant **HT** (modèle `Commission`, unique par facture Stripe), « en attente » 30 jours (remboursements, rétractation 14 j) puis « disponible » ; remboursement → commission annulée. En ligne : webhook Stripe (`onEvent` du plugin : `invoice.paid`, `charge.refunded`) ; en local : relecture des factures des filleuls à l'ouverture de la page.
+- **9c — Versements** : page cachée `/admin/affiliation` (soldes par affilié, bouton « Marquer comme versé ») ; versement manuel par virement à partir d'un seuil (50 € proposé) ; commissions ajoutées à `/admin/couts` (marge). Migration Prisma prévue (`referralCode`, `referredById`, `Commission`, `Payout`).
 
 - **2026-11-14 : prix changés à la demande de l'utilisateur** (Pro 15 €, Expert 23 €) — code + nouveaux tarifs Stripe test (Pro `price_1UbfLUAPdDZksFFK8iDmwUo8`, Expert `price_1UbfLVAPdDZksFFKxxSsOcW5`) ; l'utilisateur a mis à jour son `.env` avec `docs/changer-les-prix.md` : **prix vérifiés chez lui sur localhost le 2026-11-14 ✅**. Le reste (test 8a, infos légales, choix 8b) : « on verra plus tard ».
 

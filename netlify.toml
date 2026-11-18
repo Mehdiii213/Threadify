@@ -1,0 +1,8 @@
+# Hébergement Netlify (étape 8b). Netlify détecte Next.js tout seul
+# (adaptateur OpenNext) ; on ajoute seulement l'application des migrations
+# Prisma sur la base de production avant chaque construction du site.
+[build]
+  command = "npx prisma migrate deploy && npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"

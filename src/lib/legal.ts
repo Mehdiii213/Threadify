@@ -21,9 +21,9 @@ export const LEGAL = {
   // Médiateur de la consommation (obligatoire pour vendre à des particuliers).
   mediator: "[Nom et site web du médiateur de la consommation choisi]",
   host: {
-    name: "Vercel Inc.",
-    address: "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
-    website: "https://vercel.com",
+    name: "Netlify, Inc.",
+    address: "[Adresse de Netlify, Inc. à recopier depuis netlify.com/legal (San Francisco, États-Unis)]",
+    website: "https://www.netlify.com",
   },
   lastUpdate: "10 novembre 2026",
 };

@@ -75,6 +75,11 @@ export const auth = betterAuth({
       },
     },
   },
+  // Adresse IP du visiteur (limitation des tentatives) : en ligne sur Netlify,
+  // l'en-tête x-nf-client-connection-ip est fixé par Netlify (non falsifiable).
+  advanced: {
+    ipAddress: { ipAddressHeaders: ["x-nf-client-connection-ip", "x-forwarded-for"] },
+  },
   // Étape 8a : limitation des tentatives (anti-force brute), stockée en base.
   // Sans effet dans npm run dev (activée seulement en production).
   rateLimit: {

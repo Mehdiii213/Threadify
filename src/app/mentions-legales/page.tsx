@@ -40,7 +40,7 @@ export default function MentionsLegalesPage() {
       <section>
         <h2>Hébergement</h2>
         <p>
-          Le site est hébergé par {LEGAL.host.name}, {LEGAL.host.address} ({LEGAL.host.website}).
+          Le site est hébergé par {LEGAL.host.name}, <Fill value={LEGAL.host.address} /> ({LEGAL.host.website}).
         </p>
       </section>
 

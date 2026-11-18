@@ -5,8 +5,8 @@ import { LEGAL } from "@/lib/legal";
 export const metadata: Metadata = { title: "Politique de confidentialité" };
 
 const PROCESSORS = [
-  ["Vercel Inc. (États-Unis)", "Hébergement du site"],
-  ["Supabase (serveurs dans l'Union européenne)", "Base de données : compte, créations"],
+  ["Netlify, Inc. (États-Unis)", "Hébergement du site"],
+  ["Supabase, Inc. (serveurs aux États-Unis)", "Base de données : compte, créations"],
   ["Anthropic PBC (États-Unis)", "Intelligence artificielle : reçoit le texte à transformer au moment d'une génération"],
   ["Stripe Payments Europe Ltd (Irlande)", "Paiement des abonnements et factures"],
   ["Resend Inc. (États-Unis)", "Envoi des e-mails (confirmation d'adresse, mot de passe oublié)"],

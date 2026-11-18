@@ -22,9 +22,12 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col bg-zinc-50 text-zinc-900">
       <SiteHeader>
-        <Suspense fallback={<StatusPill color="bg-zinc-300" label="Base de données : vérification…" />}>
-          <DbStatus />
-        </Suspense>
+        {/* Indicateur de connexion à la base : utile en local (npm run dev), masqué sur le site en ligne. */}
+        {process.env.NODE_ENV !== "production" && (
+          <Suspense fallback={<StatusPill color="bg-zinc-300" label="Base de données : vérification…" />}>
+            <DbStatus />
+          </Suspense>
+        )}
       </SiteHeader>
 
       <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 py-16 text-center">

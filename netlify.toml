@@ -6,3 +6,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Netlify bloque la construction s'il retrouve la valeur d'une variable dans
+  # le code ou le site construit. Ces trois-là ne sont PAS secrètes (adresse
+  # publique du site, identifiants de prix Stripe écrits dans les guides) :
+  # on les exclut de la recherche. Les vraies clés restent surveillées.
+  SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL,STRIPE_PRICE_PRO,STRIPE_PRICE_EXPERT"

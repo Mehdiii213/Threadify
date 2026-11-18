@@ -336,6 +336,8 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 - `npx prisma migrate deploy` chez l'utilisateur : `FATAL: (ENOTFOUND) tenant/user postgres.<ref> not found` — projet Supabase **mis en pause** (offre gratuite, inactivité) ou adresse « Session pooler » modifiée (`aws-0-…` → `aws-1-…`) — relancer le projet (« Restore project ») ou recopier l'adresse Session pooler dans `DATABASE_URL` ; résolu chez l'utilisateur le 2026-11-18.
 - Utilisateur ne se souvenait plus de ses identifiants Threadify — e-mail du compte retrouvé dans `ADMIN_EMAILS` du `.env`, puis « Mot de passe oublié » (lien affiché dans la fenêtre noire) — fonctionne ✅ (2026-11-18).
 
+- 1er déploiement Netlify échoué : « Secrets scanning detected secrets in files during build » — Netlify cherche la valeur de chaque variable d'environnement dans le dépôt et le site construit ; `BETTER_AUTH_URL` (`https://threadify.netlify.app`, cité dans les guides et présent dans robots.txt / sitemap) et les `STRIPE_PRICE_*` (cités dans les guides) ne sont pas secrets — `SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL,STRIPE_PRICE_PRO,STRIPE_PRICE_EXPERT"` dans `netlify.toml` (les vraies clés restent surveillées). Projet Netlify de l'utilisateur : `threadify-nbjr`.
+
 ## Questions ouvertes
 
 - Import d'article par URL (scraping) dans le MVP ou plus tard ?

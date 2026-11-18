@@ -8,7 +8,7 @@ export const LEGAL = {
   siteName: "Threadify",
   editor: {
     name: "[Votre nom et prénom, ou nom de la société]",
-    status: "[Statut : micro-entreprise / EI / SASU…]",
+    status: "[Entrepreneur individuel (micro-entreprise)]",
     siret: "[Numéro SIRET]",
     address: "[Adresse postale]",
     email: "[Adresse e-mail de contact]",
@@ -17,7 +17,7 @@ export const LEGAL = {
   },
   // Régime de TVA : "franchise" = TVA non applicable (art. 293 B du CGI),
   // "tva20" = prix TTC avec TVA à 20 %.
-  vatRegime: "tva20" as "franchise" | "tva20",
+  vatRegime: "franchise" as "franchise" | "tva20", // micro-entreprise (2026-11-18)
   // Médiateur de la consommation (obligatoire pour vendre à des particuliers).
   mediator: "[Nom et site web du médiateur de la consommation choisi]",
   host: {

@@ -105,7 +105,7 @@ src/app/affiliation/, admin/affiliation/, conditions-affiliation/  # page de l'a
 src/app/espace/actions.ts   # actions du tableau de bord (dossiers, étiquettes, dupliquer, supprimer…)
 src/components/dashboard/   # menu de carte, navigation des dossiers
 src/components/organisation-panel.tsx  # titre / dossier / étiquettes d'une création
-docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7, tester-etape-8a, tester-etape-9, changer-les-prix, mettre-en-ligne)
+docs/                       # guides pas à pas pour l'utilisateur (lancer-en-local, mettre-a-jour, tester-etape-2 à 7, tester-etape-8a, tester-etape-9, changer-les-prix, mettre-en-ligne, brancher-threadify-fr)
 src/generated/prisma/       # client Prisma généré — ignoré par git, recréé par `npm install`
 ```
 
@@ -158,6 +158,7 @@ Dans le conteneur : `service postgresql start`, base `threadify`, utilisateur `p
 
 ## Reprise — prochaine étape (point au 2026-11-19)
 
+- **2026-11-19 — 8b partie 2 démarrée** (l'utilisateur : « on attaque threadify.fr ») : guide **`docs/brancher-threadify-fr.md`** en 4 parties — A achat chez **OVHcloud** (refuser les options), B **Netlify DNS** (4 serveurs de noms à saisir chez OVHcloud, HTTPS automatique), C domaine vérifié chez **Resend** (région Irlande, enregistrements MX/TXT ajoutés dans Netlify DNS), D `BETTER_AUTH_URL=https://threadify.fr` + `EMAIL_FROM="Threadify <noreply@threadify.fr>"` (case « Live app ») puis Trigger deploy. `EMAIL_FROM` ajoutée à `SECRETS_SCAN_OMIT_KEYS`. **À faire après la bascule** : redirection 301 de `threadify-fr.netlify.app` vers `threadify.fr` (sinon connexion refusée sur l'ancienne adresse : `INVALID_ORIGIN`). **En attente : partie A (achat) chez l'utilisateur.**
 - **Prochaine étape : 8b partie 2 — `threadify.fr`** (achat chez un bureau d'enregistrement, DNS vers Netlify + HTTPS, domaine vérifié chez Resend → `EMAIL_FROM` en `@threadify.fr`, `BETTER_AUTH_URL` = `https://threadify.fr` dans la case « Live app », Trigger deploy). Puis **8c** quand le Kbis est reçu et le médiateur choisi (infos légales dans `src/lib/legal.ts`, Stripe en mode réel, webhook avec `invoice.paid` et `charge.refunded`).
 
 

@@ -16,6 +16,7 @@ const messages: Record<string, string> = {
   CREDENTIAL_ACCOUNT_NOT_FOUND: "Aucun mot de passe n'est associé à ce compte.",
   STRIPE_CANCEL_FAILED:
     "Votre abonnement n'a pas pu être résilié automatiquement, le compte n'a donc pas été supprimé. Réessayez dans un instant.",
+  INVALID_ORIGIN: "Le site est mal configuré (adresse du site). Merci de réessayer plus tard.",
   TOO_MANY_REQUESTS: "Trop de tentatives. Par sécurité, patientez quelques minutes puis réessayez.",
 };
 

@@ -11,3 +11,12 @@
   # publique du site, expéditeur des e-mails, identifiants de prix Stripe) :
   # on les exclut de la recherche. Les vraies clés restent surveillées.
   SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL,EMAIL_FROM,STRIPE_PRICE_PRO,STRIPE_PRICE_EXPERT"
+
+# Étape 8b (partie 2) : l'adresse officielle est https://threadify.fr. L'ancienne
+# adresse Netlify redirige vers elle (sinon la connexion y serait refusée :
+# Better Auth n'accepte que l'adresse de BETTER_AUTH_URL).
+[[redirects]]
+  from = "https://threadify-fr.netlify.app/*"
+  to = "https://threadify.fr/:splat"
+  status = 301
+  force = true

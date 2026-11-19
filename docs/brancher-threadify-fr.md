@@ -29,44 +29,37 @@ Un « nom de domaine », c'est l'adresse du site. On l'achète pour un an chez u
 
 ---
 
-## Partie B — Relier `threadify.fr` à Netlify
+## Partie B — Relier `threadify.fr` à Netlify (fait le 2026-11-19)
 
-On confie la gestion de l'adresse à Netlify (gratuit) : il s'occupe ensuite tout seul du cadenas HTTPS.
+On garde la gestion DNS **chez OVHcloud** (Netlify propose cette méthode) :
 
-1. **Netlify** → votre projet **threadify-fr** → **« Gérer »** → **« Name and address »** → bouton **« Add a domain »**.
-2. Tapez `threadify.fr` → validez. Netlify vérifie que vous en êtes propriétaire et propose d'utiliser **« Netlify DNS »** : acceptez (**« Set up Netlify DNS »** / « Add domain »), en gardant les réglages proposés.
-3. ✅ Netlify affiche **4 adresses de « serveurs de noms »** (« name servers »), du genre `dns1.p01.nsone.net`, `dns2.p01.nsone.net`, … **Laissez cette page ouverte** ou recopiez-les dans un Bloc-notes.
-4. **OVHcloud** → espace client → **« Noms de domaine »** → `threadify.fr` → onglet **« Serveurs DNS »** → **« Modifier les serveurs DNS »**.
-5. Remplacez les serveurs d'OVHcloud par **les 4 adresses de Netlify** (une par ligne ; ajoutez des lignes si besoin), puis **« Appliquer la configuration »**.
-6. ⏳ **Attente** : de 15 minutes à 24 heures (souvent moins d'une heure). Netlify affiche un message du type « Waiting on DNS propagation », puis, une fois prêt, crée automatiquement le **certificat HTTPS** (« Let's Encrypt »).
-7. ✅ C'est prêt quand **`https://threadify.fr`** affiche votre site **avec le cadenas**.
+1. **Netlify** → **« Gérer »** → **« Name and address »** → **« Add a domain »** → **« Ajoutez un domaine dont vous êtes propriétaire »** (⚠️ pas « Acheter ») → `threadify.fr` → **Save**. Netlify ajoute aussi `www.threadify.fr` et affiche « Waiting for DNS ».
+2. **OVHcloud** → **Web Cloud** → **Noms de domaine** → `threadify.fr` → onglet **« Zone DNS »** :
+   - ligne `@` · `A` : **modifier** la cible en `75.2.60.5` ;
+   - **supprimer** les lignes `www` · `A` et `www` · `TXT "3|welcome"` (page d'accueil OVHcloud) ;
+   - **ajouter** une entrée `CNAME` : sous-domaine `www`, cible `threadify-fr.netlify.app.` (avec le point final) ;
+   - ne pas toucher aux lignes `NS`, `SPF`, `MX`, `TXT "1|…"`.
+3. ⏳ Quelques minutes à quelques heures : `https://threadify.fr` s'ouvre avec le cadenas, `www.threadify.fr` y redirige.
 
-> Pendant l'attente, l'ancienne adresse `https://threadify-fr.netlify.app` continue de fonctionner normalement. Vous pouvez faire la partie C en parallèle.
+## Partie C — Autoriser Resend à envoyer depuis `@threadify.fr` (fait le 2026-11-19)
 
----
-
-## Partie C — Autoriser Resend à envoyer depuis `@threadify.fr`
-
-1. **https://resend.com** → menu **« Domains »** → **« Add Domain »**.
-2. Domain : `threadify.fr`. Region : choisissez **Ireland (eu-west-1)** si on vous le demande → **Add**.
-3. ✅ Resend affiche une liste de **3 ou 4 « enregistrements DNS »** à créer (type `MX`, `TXT`… avec un « Name » et une « Value »). **Laissez cette page ouverte.**
-4. Dans un autre onglet : **Netlify** → menu du haut **« Domaines »** (« Domains ») → `threadify.fr` → **« DNS settings »** / « Add new record ».
-5. Pour **chaque ligne** de Resend, cliquez sur **« Add new record »** dans Netlify et recopiez **exactement** :
-   - **Record type** = le « Type » de Resend (`MX` ou `TXT`) ;
-   - **Name** = le « Name » de Resend (par exemple `send` ou `resend._domainkey`) — sans ajouter `.threadify.fr` si Netlify l'ajoute déjà tout seul ;
-   - **Value** = la « Value » de Resend (copiez-la avec le bouton de copie, elle est longue) ;
-   - **Priority** (pour le `MX` seulement) = la valeur indiquée par Resend (souvent `10`).
-6. De retour sur Resend, cliquez sur **« Verify DNS Records »**. ⏳ Quelques minutes à quelques heures.
-7. ✅ Le domaine passe en **« Verified »** (vert).
-
----
+1. **Resend** → **Domains** → **Add Domain** → `threadify.fr`, région **Ireland (eu-west-1)**.
+2. ⚠️ Désactiver la traduction automatique du navigateur sur cette page (« SMS » = TXT, « FPS » = SPF).
+3. Chez **OVHcloud** (Zone DNS → « Ajouter une entrée »), ajouter les lignes affichées par Resend, valeurs **copiées avec l'icône de copie** (elles sont raccourcies à l'écran) :
+   | Type | Sous-domaine | Cible / valeur |
+   |---|---|---|
+   | TXT | `resend._domainkey` | `p=MIGf…` (longue) |
+   | CNAME | `rsend` | `rsend-euw1.forge.rmta.net.` |
+   | CNAME | `send` | `send.forge.rmta.net.` |
+   | TXT | `_dmarc` | `v=DMARC1; p=none;` |
+4. Resend → **« I've added the records »** → ✅ **Verified**.
 
 ## Partie D — Dire au site sa nouvelle adresse
 
 **Seulement quand `https://threadify.fr` s'ouvre avec le cadenas (partie B) et que Resend affiche « Verified » (partie C).**
 
 1. **Netlify** → **« Gérer »** → « Find a setting » : `environment` → **Environment variables**.
-2. Clé **`BETTER_AUTH_URL`** → **Edit** → case **« Live app »** (et « Versions ») : `https://threadify.fr` → **Save**.
+2. Clé **`BETTER_AUTH_URL`** → **Edit** → case **« Live app »** (et « Versions ») : `https://threadify.fr` → **Save**. ⚠️ Pas la case « Your computer ».
 3. **« Add a variable »** (ajouter une clé) : nom **`EMAIL_FROM`**, valeur (cases « Live app » et « Versions ») :
    ```
    Threadify <noreply@threadify.fr>

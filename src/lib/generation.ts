@@ -10,9 +10,10 @@ export { readContent, TWEET_MAX, tweetLength, type GeneratedContent, type Slide 
 // ─── Modèle et réglages ───────────────────────────────────────────────────────
 
 export const AI_MODEL = "claude-opus-5-5";
-// Sur Opus 5.5, la réflexion ne se désactive pas : l'effort règle sa profondeur
-// (défaut « medium » sur ce modèle ; on le fixe explicitement).
-const EFFORT = "medium" as const;
+// Sur Opus 5.5, la réflexion ne se désactive pas : l'effort règle sa profondeur.
+// « low » (étape 8b) : réflexion plus courte → génération en ~10 à 25 s, compatible
+// avec la limite de durée de l'hébergement gratuit (Netlify) ; textes de bonne qualité.
+const EFFORT = "low" as const;
 // Si le modèle refuse une demande (filtres de sécurité), l'API relance
 // automatiquement la requête sur le modèle de secours recommandé.
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";

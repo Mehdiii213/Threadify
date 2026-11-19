@@ -56,7 +56,7 @@ export const auth = betterAuth({
   },
   // Étape 8a : vérification de l'adresse e-mail. Le compte est utilisable tout
   // de suite, mais les générations par l'IA attendent la confirmation
-  // (voir generateCreation) — évite les comptes avec de fausses adresses.
+  // (voir generateForUser, src/lib/generate-creation.ts) — évite les comptes avec de fausses adresses.
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,

@@ -1,0 +1,24 @@
+# Réveil quotidien de la base de données de production (Supabase, offre gratuite).
+# Supabase met en pause un projet sans activité pendant 7 jours : une visite par
+# jour de https://threadify.fr/api/sante (qui lit la base) l'en empêche.
+# Lancement manuel possible : onglet « Actions » → « Réveil de la base » → « Run workflow ».
+name: Réveil de la base
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # tous les jours à 6 h 17 (heure UTC)
+  workflow_dispatch:
+
+jobs:
+  reveil:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Visiter l'adresse santé du site
+        run: |
+          for essai in 1 2 3; do
+            if curl -fsS --max-time 30 https://threadify.fr/api/sante; then
+              echo; echo "Base de données éveillée."; exit 0
+            fi
+            echo "Essai $essai échoué, nouvel essai dans 30 s…"; sleep 30
+          done
+          echo "La base ne répond pas : vérifier le projet Supabase « threadify-production »."; exit 1

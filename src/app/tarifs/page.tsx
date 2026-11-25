@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PlanCards } from "@/components/plan-cards";
+import { PeriodSwitch, PlanCards } from "@/components/plan-cards";
 import { SiteHeader } from "@/components/site-header";
-import { billingEnabled, getUserPlan } from "@/lib/billing";
-import { EXPERT_DAILY_LIMIT, EXPERT_HOURLY_LIMIT } from "@/lib/plans";
+import { annualBillingEnabled, billingEnabled, getUserPlan } from "@/lib/billing";
+import { EXPERT_DAILY_LIMIT, EXPERT_HOURLY_LIMIT, type BillingPeriod } from "@/lib/plans";
 import { vatMention } from "@/lib/legal";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Tarifs" };
 
-export default function TarifsPage() {
+export default function TarifsPage({ searchParams }: PageProps<"/tarifs">) {
   return (
     <main className="flex flex-1 flex-col bg-zinc-50 text-zinc-900">
       <SiteHeader />
@@ -22,11 +22,12 @@ export default function TarifsPage() {
         </div>
         <div className="mt-12">
           <Suspense fallback={<PlanCardsFallback />}>
-            <CardsForVisitor />
+            <CardsForVisitor searchParams={searchParams} />
           </Suspense>
         </div>
         <p className="mt-8 text-center text-xs text-zinc-500">
-          {vatMention()}, prélevés chaque mois. * Usage raisonnable : {EXPERT_DAILY_LIMIT} générations par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum.
+          {vatMention()}, prélevés chaque mois (ou chaque année en annuel : paiement en une fois, quotas toujours mensuels). * Usage
+          raisonnable : {EXPERT_DAILY_LIMIT} générations par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum.
           Paiement sécurisé par Stripe.
         </p>
       </section>
@@ -34,10 +35,18 @@ export default function TarifsPage() {
   );
 }
 
-async function CardsForVisitor() {
-  const session = await getSession();
+async function CardsForVisitor({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [session, sp] = await Promise.all([getSession(), searchParams]);
   const plan = session ? await getUserPlan(session.user.id) : null;
-  return <PlanCards currentPlan={plan} billingOn={billingEnabled()} />;
+  // L'annuel n'est proposé que si ses prix Stripe sont configurés.
+  const annualOn = annualBillingEnabled() || !billingEnabled();
+  const period: BillingPeriod = annualOn && sp.periode === "annuel" ? "annuel" : "mensuel";
+  return (
+    <div className="space-y-10">
+      {annualOn && <PeriodSwitch period={period} />}
+      <PlanCards currentPlan={plan} billingOn={billingEnabled()} period={period} />
+    </div>
+  );
 }
 
 function PlanCardsFallback() {

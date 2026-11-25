@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UpgradeButton } from "@/components/billing-buttons";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { ANNUAL_DISCOUNT_PERCENT, PLANS, formatEuros, type BillingPeriod, type PlanId } from "@/lib/plans";
 
 const FEATURES: Record<PlanId, string[]> = {
   gratuit: [
@@ -23,14 +23,52 @@ const FEATURES: Record<PlanId, string[]> = {
   ],
 };
 
+/** Choix « Mensuel / Annuel » de la page Tarifs (simples liens : ?periode=annuel). */
+export function PeriodSwitch({ period }: { period: BillingPeriod }) {
+  const base = "rounded-full px-5 py-2 text-sm font-semibold";
+  return (
+    <div className="flex justify-center">
+      <div className="inline-flex rounded-full border border-zinc-200 bg-white p-1 shadow-sm" role="group" aria-label="Période de paiement">
+        <Link
+          href="/tarifs"
+          scroll={false}
+          aria-current={period === "mensuel" ? "true" : undefined}
+          className={`${base} ${period === "mensuel" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"}`}
+        >
+          Mensuel
+        </Link>
+        <Link
+          href="/tarifs?periode=annuel"
+          scroll={false}
+          aria-current={period === "annuel" ? "true" : undefined}
+          className={`${base} ${period === "annuel" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"}`}
+        >
+          Annuel <span className={period === "annuel" ? "text-emerald-300" : "text-emerald-600"}>−{ANNUAL_DISCOUNT_PERCENT} %</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 /** Les 3 offres côte à côte. currentPlan = null si le visiteur n'est pas connecté. */
-export function PlanCards({ currentPlan, billingOn }: { currentPlan: PlanId | null; billingOn: boolean }) {
+export function PlanCards({
+  currentPlan,
+  billingOn,
+  period = "mensuel",
+}: {
+  currentPlan: PlanId | null;
+  billingOn: boolean;
+  period?: BillingPeriod;
+}) {
+  const annual = period === "annuel";
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {(Object.keys(PLANS) as PlanId[]).map((id) => {
         const plan = PLANS[id];
         const highlighted = id === "pro";
         const isCurrent = currentPlan === id;
+        const paid = id !== "gratuit";
+        const perMonth = annual && paid ? plan.annualPrice / 12 : plan.price;
         return (
           <div
             key={id}
@@ -46,9 +84,17 @@ export function PlanCards({ currentPlan, billingOn }: { currentPlan: PlanId | nu
             <h2 className="text-lg font-bold">{plan.label}</h2>
             <p className="text-sm text-zinc-500">{plan.tagline}</p>
             <p className="mt-5">
-              <span className="text-4xl font-extrabold tracking-tight">{plan.price} €</span>
+              {annual && paid && (
+                <span className="mr-2 text-xl font-semibold text-zinc-400 line-through">{formatEuros(plan.price)}</span>
+              )}
+              <span className="text-4xl font-extrabold tracking-tight">{formatEuros(perMonth)}</span>
               <span className="text-zinc-500"> / mois</span>
             </p>
+            {annual && paid && (
+              <p className="mt-1 text-sm text-emerald-700">
+                Facturé {formatEuros(plan.annualPrice)} par an · {formatEuros(plan.price * 12 - plan.annualPrice)} économisés
+              </p>
+            )}
             <ul className="mt-6 flex-1 space-y-2 text-sm text-zinc-700">
               {FEATURES[id].map((f) => (
                 <li key={f} className="flex gap-2">
@@ -67,12 +113,18 @@ export function PlanCards({ currentPlan, billingOn }: { currentPlan: PlanId | nu
                 >
                   {id === "gratuit" ? "Commencer gratuitement" : `Essayer ${plan.label}`}
                 </Link>
-              ) : id === "gratuit" ? (
+              ) : !paid ? (
                 <p className="rounded-xl border border-zinc-200 px-4 py-3 text-center text-sm text-zinc-500">
                   Pour revenir à l&apos;offre Gratuite, résiliez depuis « Mon abonnement ».
                 </p>
               ) : currentPlan === "gratuit" ? (
-                <UpgradeButton plan={id} label={`Passer à ${plan.label}`} enabled={billingOn} variant={highlighted ? "primary" : "secondary"} />
+                <UpgradeButton
+                  plan={id}
+                  annual={annual}
+                  label={annual ? `Passer à ${plan.label} — ${formatEuros(plan.annualPrice)} / an` : `Passer à ${plan.label}`}
+                  enabled={billingOn}
+                  variant={highlighted ? "primary" : "secondary"}
+                />
               ) : (
                 <Link
                   href="/abonnement"

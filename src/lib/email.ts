@@ -28,7 +28,7 @@ function render({ intro, button, url, outro }: Email) {
   return { text, html };
 }
 
-/** Envoie un e-mail. Ne lève jamais d'erreur : un échec est journalisé (l'inscription ne doit pas échouer pour autant). */
+/** Envoie un e-mail ; renvoie true s'il est parti. Ne lève jamais d'erreur : un échec est journalisé (l'inscription ne doit pas échouer pour autant). */
 export async function sendEmail(email: Email): Promise<boolean> {
   const { text, html } = render(email);
   const key = process.env.RESEND_API_KEY;
@@ -36,7 +36,9 @@ export async function sendEmail(email: Email): Promise<boolean> {
     console.log(
       `\n[e-mail] (non envoyé : RESEND_API_KEY absente du .env)\n  À : ${email.to}\n  Objet : ${email.subject}\n  Lien : ${email.url}\n`,
     );
-    return false;
+    // En local, l'e-mail affiché dans la console compte comme « remis » ; en
+    // production, une clé manquante est une vraie panne (on réessaiera plus tard).
+    return process.env.NODE_ENV !== "production";
   }
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -74,5 +76,22 @@ export function sendResetPasswordEmail(to: string, name: string, url: string) {
     button: "Choisir un nouveau mot de passe",
     url,
     outro: "Ce lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe reste inchangé.",
+  });
+}
+
+/** Rappel légal avant le renouvellement d'un abonnement annuel (loi Chatel, art. L215-1 du Code de la consommation). */
+export function sendRenewalReminderEmail(
+  to: string,
+  name: string,
+  details: { planLabel: string; amount: string; renewalDate: string; url: string },
+) {
+  return sendEmail({
+    to,
+    subject: `Votre abonnement annuel ${details.planLabel} sera renouvelé le ${details.renewalDate} — Threadify`,
+    intro: `Bonjour ${name}, votre abonnement annuel Threadify ${details.planLabel} sera renouvelé automatiquement le ${details.renewalDate}, pour ${details.amount} (un an). Vous n'avez rien à faire si vous souhaitez continuer. Si vous ne souhaitez pas le renouveler, vous pouvez le résilier à tout moment avant cette date depuis la page « Mon abonnement » : il restera actif jusqu'au ${details.renewalDate}.`,
+    button: "Gérer mon abonnement",
+    url: details.url,
+    outro:
+      "Conformément à l'article L215-1 du Code de la consommation, nous vous informons de la possibilité de ne pas reconduire votre contrat. Vous recevez cet e-mail car vous avez un abonnement annuel à Threadify.",
   });
 }

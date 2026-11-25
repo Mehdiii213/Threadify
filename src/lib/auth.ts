@@ -4,7 +4,13 @@ import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { stripe } from "@better-auth/stripe";
-import { ensureReferralCoupon, handleStripeEventForAffiliation, isEligibleForReferralDiscount } from "@/lib/affiliation";
+import {
+  ensureAnnualReferralCoupon,
+  ensureReferralCoupon,
+  handleStripeEventForAffiliation,
+  isEligibleForReferralDiscount,
+} from "@/lib/affiliation";
+import { isPlanId } from "@/lib/plans";
 import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { stripeClient } from "@/lib/stripe";
@@ -24,14 +30,28 @@ const stripePlugins = stripeClient
         subscription: {
           enabled: true,
           // Étape 9 : un filleul qui s'abonne pour la première fois a −20 % sur son 1er mois.
-          getCheckoutSessionParams: async ({ user }) => {
+          // En annuel : l'équivalent de son 1er mois, en montant fixe (choix du 2026-11-25).
+          getCheckoutSessionParams: async ({ user, plan }, _request, ctx) => {
             if (!(await isEligibleForReferralDiscount(user.id))) return {};
-            const coupon = await ensureReferralCoupon();
+            const annual = (ctx.body as { annual?: boolean } | undefined)?.annual === true;
+            const planId = plan.name.toLowerCase();
+            const coupon = annual && isPlanId(planId) ? await ensureAnnualReferralCoupon(planId) : await ensureReferralCoupon();
             return coupon ? { params: { discounts: [{ coupon }] } } : {};
           },
           plans: [
-            { name: "pro", priceId: process.env.STRIPE_PRICE_PRO, limits: { generations: 100 } },
-            { name: "expert", priceId: process.env.STRIPE_PRICE_EXPERT, limits: { generations: null } },
+            // annualDiscountPriceId : prix de l'abonnement annuel (−30 %), choisi avec `annual: true`.
+            {
+              name: "pro",
+              priceId: process.env.STRIPE_PRICE_PRO,
+              annualDiscountPriceId: process.env.STRIPE_PRICE_PRO_ANNUAL || undefined,
+              limits: { generations: 100 },
+            },
+            {
+              name: "expert",
+              priceId: process.env.STRIPE_PRICE_EXPERT,
+              annualDiscountPriceId: process.env.STRIPE_PRICE_EXPERT_ANNUAL || undefined,
+              limits: { generations: null },
+            },
           ],
         },
       }),

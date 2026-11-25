@@ -38,11 +38,12 @@ export default function CgvPage() {
             avec {LEGAL.siteName} ».
           </li>
           <li>
-            <strong>{PLANS.pro.label}</strong> : {PLANS.pro.price} € par mois, {PLANS.pro.monthlyGenerations} générations par mois, sans
-            mention.
+            <strong>{PLANS.pro.label}</strong> : {PLANS.pro.price} € par mois, ou {PLANS.pro.annualPrice} € par an en abonnement annuel,{" "}
+            {PLANS.pro.monthlyGenerations} générations par mois, sans mention.
           </li>
           <li>
-            <strong>{PLANS.expert.label}</strong> : {PLANS.expert.price} € par mois, générations illimitées dans la limite d&apos;un usage
+            <strong>{PLANS.expert.label}</strong> : {PLANS.expert.price} € par mois, ou {PLANS.expert.annualPrice} € par an en abonnement
+            annuel, générations illimitées dans la limite d&apos;un usage
             raisonnable ({EXPERT_DAILY_LIMIT} par jour et {EXPERT_HOURLY_LIMIT} par heure au maximum), sans mention.
           </li>
         </ul>
@@ -66,12 +67,16 @@ export default function CgvPage() {
         <h2>4. Paiement, renouvellement et résiliation</h2>
         <p>
           Le paiement est réalisé par carte bancaire via notre prestataire sécurisé Stripe ; {LEGAL.siteName} n&apos;a jamais accès à vos
-          numéros de carte. L&apos;abonnement est mensuel, sans engagement, et se renouvelle automatiquement chaque mois à la date
-          anniversaire.
+          numéros de carte. L&apos;abonnement <strong>mensuel</strong> est sans engagement et se renouvelle automatiquement chaque mois à la
+          date anniversaire. L&apos;abonnement <strong>annuel</strong> est payé en une fois pour douze mois (les quotas restent mensuels) et
+          se renouvelle automatiquement chaque année à la date anniversaire ; vous êtes prévenu par e-mail au moins un mois avant chaque
+          renouvellement, conformément à l&apos;article L215-1 du Code de la consommation. Un abonné mensuel peut passer à l&apos;annuel à tout
+          moment : le temps restant du mois en cours est déduit.
         </p>
         <p>
           Vous pouvez le résilier à tout moment depuis la page « Mon abonnement » : il reste actif jusqu&apos;à la fin de la période déjà
-          payée, puis votre compte revient à l&apos;offre Gratuite. Le mois commencé n&apos;est pas remboursé. En cas d&apos;échec de paiement,
+          payée (mois ou année), puis votre compte revient à l&apos;offre Gratuite. La période commencée n&apos;est pas remboursée, sauf
+          exercice du droit de rétractation (article 5). En cas d&apos;échec de paiement,
           l&apos;abonnement peut être suspendu.
         </p>
       </section>

@@ -3,9 +3,16 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ManageButton, UpgradeButton } from "@/components/billing-buttons";
 import { SiteHeader } from "@/components/site-header";
-import { billingEnabled, getActiveSubscription, getUsage, scheduledEnd, syncSubscriptionFromStripe } from "@/lib/billing";
+import {
+  annualBillingEnabled,
+  billingEnabled,
+  getActiveSubscription,
+  getUsage,
+  scheduledEnd,
+  syncSubscriptionFromStripe,
+} from "@/lib/billing";
 import { formatDate } from "@/lib/creations";
-import { PLANS } from "@/lib/plans";
+import { ANNUAL_DISCOUNT_PERCENT, PLANS, formatEuros } from "@/lib/plans";
 import { AFFILIATION } from "@/lib/affiliation-config";
 import { isEligibleForReferralDiscount } from "@/lib/affiliation";
 import { requireSession } from "@/lib/session";
@@ -39,6 +46,9 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
   ]);
   const plan = PLANS[usage.plan];
   const billingOn = billingEnabled();
+  const annualOn = annualBillingEnabled();
+  const isAnnual = sub?.billingInterval === "year";
+  const paidPlans = ["pro", "expert"] as const;
   const percent = usage.limit ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
 
   return (
@@ -54,7 +64,9 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
         <p className="text-sm text-zinc-500">Offre actuelle</p>
         <p className="mt-1 flex items-baseline gap-3">
           <span className="text-2xl font-bold">{plan.label}</span>
-          <span className="text-zinc-500">{plan.price} € / mois</span>
+          <span className="text-zinc-500">
+            {isAnnual ? `${formatEuros(plan.annualPrice)} / an (abonnement annuel)` : `${formatEuros(plan.price)} / mois`}
+          </span>
         </p>
         {sub && (scheduledEnd(sub) ?? sub.periodEnd) && (
           <p className="mt-2 text-sm text-zinc-600">
@@ -85,18 +97,58 @@ async function Subscription({ searchParams }: { searchParams: Promise<Record<str
 
       {usage.plan === "gratuit" && referralDiscount && (
         <p className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
-          🎁 Parrainage : <strong>−{AFFILIATION.referralDiscountPercent} % sur votre premier mois</strong>, appliqués automatiquement sur la page de
-          paiement.
+          🎁 Parrainage : <strong>−{AFFILIATION.referralDiscountPercent} % sur votre premier mois</strong> (en annuel : l&apos;équivalent, soit{" "}
+          {formatEuros(PLANS.pro.price * 0.2)} sur Pro et {formatEuros(PLANS.expert.price * 0.2)} sur Expert), appliqués automatiquement sur la page
+          de paiement.
         </p>
       )}
 
+      {usage.plan === "gratuit" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {paidPlans.map((id) => (
+            <div key={id} className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <p className="font-bold">{PLANS[id].label}</p>
+              <UpgradeButton
+                plan={id}
+                label={`Mensuel — ${formatEuros(PLANS[id].price)} / mois`}
+                enabled={billingOn}
+                variant={id === "pro" ? "primary" : "secondary"}
+              />
+              {annualOn && (
+                <UpgradeButton
+                  plan={id}
+                  annual
+                  label={`Annuel — ${formatEuros(PLANS[id].annualPrice)} / an (−${ANNUAL_DISCOUNT_PERCENT} %)`}
+                  enabled={billingOn}
+                  variant="secondary"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {usage.plan !== "gratuit" && !isAnnual && annualOn && !(sub && scheduledEnd(sub)) && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <p className="font-semibold text-emerald-900">
+            Passez à l&apos;annuel et économisez {formatEuros(plan.price * 12 - plan.annualPrice)} par an (−{ANNUAL_DISCOUNT_PERCENT} %)
+          </p>
+          <p className="mt-1 text-sm text-emerald-800">
+            {formatEuros(plan.annualPrice)} par an au lieu de {formatEuros(plan.price * 12)}. Le temps restant de votre mois en cours est déduit
+            automatiquement.
+          </p>
+          <div className="mt-3 max-w-sm">
+            <UpgradeButton
+              plan={usage.plan}
+              annual
+              label={`Passer à l'annuel — ${formatEuros(plan.annualPrice)} / an`}
+              enabled={billingOn}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        {usage.plan === "gratuit" && (
-          <>
-            <UpgradeButton plan="pro" label={`Passer à Pro — ${PLANS.pro.price} € / mois`} enabled={billingOn} />
-            <UpgradeButton plan="expert" label={`Passer à Expert — ${PLANS.expert.price} € / mois`} enabled={billingOn} variant="secondary" />
-          </>
-        )}
         {usage.plan !== "gratuit" && <ManageButton enabled={billingOn} />}
         <Link
           href="/tarifs"

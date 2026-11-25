@@ -181,6 +181,9 @@ model Subscription {
   seats                Int?
   billingInterval      String?
   stripeScheduleId     String?
+  // Abonnement annuel : date de renouvellement (periodEnd) pour laquelle le
+  // rappel légal (loi Chatel) a déjà été envoyé — évite les doublons.
+  renewalReminderFor   DateTime?
 
   @@index([referenceId])
   @@map("subscription")

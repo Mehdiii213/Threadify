@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { AFFILIATION, normalizeReferralCode } from "@/lib/affiliation-config";
+import { PLANS, type PlanId } from "@/lib/plans";
 import { vatRate } from "@/lib/legal";
 import { prisma } from "@/lib/prisma";
 import { stripeClient } from "@/lib/stripe";
@@ -74,6 +75,29 @@ export async function ensureReferralCoupon() {
     });
   }
   return COUPON_ID;
+}
+
+/**
+ * Filleul en abonnement annuel : réduction fixe égale à 20 % d'UN mois
+ * (3 € sur Pro, 4,60 € sur Expert), et non 20 % de toute l'année.
+ */
+export async function ensureAnnualReferralCoupon(plan: PlanId) {
+  if (!stripeClient || plan === "gratuit") return null;
+  const amountOff = Math.round(PLANS[plan].price * 100 * (AFFILIATION.referralDiscountPercent / 100));
+  const id = `THREADIFY_PARRAINAGE_ANNUEL_${plan.toUpperCase()}_${amountOff}`;
+  try {
+    await stripeClient.coupons.retrieve(id);
+  } catch (error) {
+    if ((error as { code?: string }).code !== "resource_missing") throw error;
+    await stripeClient.coupons.create({
+      id,
+      amount_off: amountOff,
+      currency: "eur",
+      duration: "once",
+      name: `Parrainage (−${AFFILIATION.referralDiscountPercent} % d'un mois)`,
+    });
+  }
+  return id;
 }
 
 // ─── Commissions ──────────────────────────────────────────────────────────────

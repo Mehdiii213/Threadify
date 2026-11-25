@@ -20,11 +20,15 @@ const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" 
 const usd = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD", maximumFractionDigits: 4 });
 const int = new Intl.NumberFormat("fr-FR");
 
-/** Revenu net mensuel d'un abonné : prix TTC − TVA − frais Stripe estimés. */
-function netRevenue(plan: PlanId) {
-  const price = PLANS[plan].price;
+/**
+ * Revenu net mensuel d'un abonné : prix payé − TVA − frais Stripe estimés.
+ * Abonnement annuel : 1/12 du prix annuel (et des frais d'un seul paiement par an).
+ */
+function netRevenue(plan: PlanId, annual = false) {
+  const price = annual ? PLANS[plan].annualPrice : PLANS[plan].price;
   if (price === 0) return 0;
-  return price / (1 + vatRate()) - (price * STRIPE_FEE_RATE + STRIPE_FEE_FIXED);
+  const net = price / (1 + vatRate()) - (price * STRIPE_FEE_RATE + STRIPE_FEE_FIXED);
+  return annual ? net / 12 : net;
 }
 
 function monthRange(param: string | undefined) {
@@ -72,9 +76,10 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
       _count: { _all: true },
       _sum: { costUsd: true, inputTokens: true, outputTokens: true },
     }),
-    prisma.subscription.findMany({ where: { status: { in: ["active", "trialing"] } }, select: { referenceId: true, plan: true } }),
+    prisma.subscription.findMany({ where: { status: { in: ["active", "trialing"] } }, select: { referenceId: true, plan: true, billingInterval: true } }),
   ]);
   const planOf = new Map<string, PlanId>();
+  const annualIds = new Set(subs.filter((s) => s.billingInterval === "year").map((s) => s.referenceId));
   for (const s of subs) {
     const p = s.plan.toLowerCase();
     if (isPlanId(p)) planOf.set(s.referenceId, p);
@@ -89,12 +94,13 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
       const st = statsOf.get(id);
       const plan = (id && planOf.get(id)) || "gratuit";
       const costEur = (st?._sum.costUsd ?? 0) * rate;
-      const revenue = netRevenue(plan);
+      const revenue = netRevenue(plan, Boolean(id && annualIds.has(id)));
       return {
         id,
         // id null : générations de comptes supprimés depuis (historique anonyme)
         email: (id && emailOf.get(id)) || "(compte supprimé)",
         plan,
+        annual: Boolean(id && annualIds.has(id)),
         generations: st?._count._all ?? 0,
         costUsd: st?._sum.costUsd ?? 0,
         costEur,
@@ -191,7 +197,7 @@ async function Costs({ searchParams }: { searchParams: Promise<Record<string, st
               rows.map((r) => (
                 <tr key={r.id ?? "supprime"} className={r.margin < 0 ? "bg-red-50" : ""}>
                   <td className="px-4 py-3 font-medium">{r.email}</td>
-                  <td className="px-4 py-3">{PLANS[r.plan].label}</td>
+                  <td className="px-4 py-3">{PLANS[r.plan].label}{r.annual && " (annuel)"}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{int.format(r.generations)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-zinc-500">{int.format(r.tokens)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{eur.format(r.costEur)}</td>

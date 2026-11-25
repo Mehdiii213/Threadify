@@ -1,6 +1,7 @@
 # Réveil quotidien de la base de données de production (Supabase, offre gratuite).
 # Supabase met en pause un projet sans activité pendant 7 jours : une visite par
 # jour de https://threadify.fr/api/sante (qui lit la base) l'en empêche.
+# Envoie aussi les rappels légaux avant renouvellement des abonnements annuels.
 # Lancement manuel possible : onglet « Actions » → « Réveil de la base » → « Run workflow ».
 name: Réveil de la base
 
@@ -22,3 +23,5 @@ jobs:
             echo "Essai $essai échoué, nouvel essai dans 30 s…"; sleep 30
           done
           echo "La base ne répond pas : vérifier le projet Supabase « threadify-production »."; exit 1
+      - name: Envoyer les rappels avant renouvellement (abonnements annuels)
+        run: curl -fsS --max-time 60 https://threadify.fr/api/rappels-renouvellement; echo

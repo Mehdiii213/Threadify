@@ -95,6 +95,19 @@ export async function recordGeneration(
   await prisma.generationEvent.create({ data: { userId, creationId, ...usage } });
 }
 
+/** Offre correspondant à un prix Stripe (mensuel ou annuel), d'après .env. */
+export function planFromPriceId(priceId: string | undefined): Exclude<PlanId, "gratuit"> | null {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRICE_PRO || priceId === process.env.STRIPE_PRICE_PRO_ANNUAL) return "pro";
+  if (priceId === process.env.STRIPE_PRICE_EXPERT || priceId === process.env.STRIPE_PRICE_EXPERT_ANNUAL) return "expert";
+  return null;
+}
+
+/** L'abonnement annuel est-il proposé ? (prix annuels présents dans .env) */
+export function annualBillingEnabled() {
+  return billingEnabled() && Boolean(process.env.STRIPE_PRICE_PRO_ANNUAL && process.env.STRIPE_PRICE_EXPERT_ANNUAL);
+}
+
 /**
  * Met à jour l'abonnement local d'après Stripe (résiliation, renouvellement…).
  * En production, les webhooks Stripe s'en chargent ; cette synchronisation à la
@@ -120,6 +133,9 @@ export async function syncSubscriptionFromStripe(userId: string) {
           endedAt: date(remote.ended_at),
           periodStart: date(item?.current_period_start) ?? sub.periodStart,
           periodEnd: date(item?.current_period_end) ?? sub.periodEnd,
+          // Changement d'offre ou passage mensuel → annuel fait chez Stripe.
+          billingInterval: item?.price.recurring?.interval ?? sub.billingInterval,
+          plan: planFromPriceId(item?.price.id) ?? sub.plan,
         },
       });
     } catch (error) {

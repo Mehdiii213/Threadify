@@ -13,7 +13,21 @@ const NOT_CONFIGURED =
   "Le paiement n'est pas encore configuré sur ce site (clés Stripe absentes du fichier .env).";
 
 /** Ouvre la page de paiement Stripe (mode test : carte 4242 4242 4242 4242). */
-export function UpgradeButton({ plan, label, enabled, variant = "primary" }: { plan: Exclude<PlanId, "gratuit">; label: string; enabled: boolean; variant?: "primary" | "secondary" }) {
+// annual : abonnement annuel (−30 %). Pour un abonné existant, Stripe ouvre son
+// espace client pour confirmer le changement (déduction du temps déjà payé).
+export function UpgradeButton({
+  plan,
+  label,
+  enabled,
+  variant = "primary",
+  annual = false,
+}: {
+  plan: Exclude<PlanId, "gratuit">;
+  label: string;
+  enabled: boolean;
+  variant?: "primary" | "secondary";
+  annual?: boolean;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,8 +38,10 @@ export function UpgradeButton({ plan, label, enabled, variant = "primary" }: { p
     const origin = window.location.origin;
     const { error } = await authClient.subscription.upgrade({
       plan,
+      annual,
       successUrl: `${origin}/abonnement?paiement=ok`,
       cancelUrl: `${origin}/tarifs`,
+      returnUrl: `${origin}/abonnement`,
       locale: "fr",
     });
     // Sans erreur, le navigateur part vers la page de paiement Stripe.
